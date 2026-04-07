@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Volleyball Platform{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/volleyball.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="team-logo">
+                    <div class="volleyball-icon">🏐</div>
+                    <div class="team-info">
+                        <span class="team-label">VOLLEYBALL</span>
+                        <span class="team-name">{{ request.user.profile.team.name|default:"TEAM NAME" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar">
+                    {% if request.user.profile.avatar %}
+                        <img src="{{ request.user.profile.avatar.url }}" alt="avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">👤</div>
+                    {% endif %}
+                </div>
+                <div class="user-details">
+                    <span class="username">{{ request.user.username }}</span>
+                    <span class="user-role">{{ request.user.profile.get_role_display|default:"Player"|upper }}</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard' %}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    Dashboard
+                </a>
+                <a href="{% url 'matches' %}" class="nav-item {% if active_page == 'matches' %}active{% endif %}">
+                    Matches
+                </a>
+                <a href="{% url 'statistics' %}" class="nav-item {% if active_page == 'statistics' %}active{% endif %}">
+                    Statistics
+                </a>
+                <a href="{% url 'messages' %}" class="nav-item {% if active_page == 'messages' %}active{% endif %}">
+                    Messages
+                </a>
+                <a href="{% url 'news' %}" class="nav-item {% if active_page == 'news' %}active{% endif %}">
+                    News
+                </a>
+                <a href="{% url 'achievements' %}" class="nav-item {% if active_page == 'achievements' %}active{% endif %}">
+                    Achievements
+                </a>
+                <a href="{% url 'profile' %}" class="nav-item {% if active_page == 'profile' %}active{% endif %}" style="margin-top:auto;">
+                    Profile
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item" style="color:#ff8080;">
+                    Logout
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+
+            <!-- Top header bar -->
+            <header class="top-header">
+                <div class="header-title">
+                    <div class="header-stripe"></div>
+                    <h1>{% block page_title %}VOLLEYBALL{% endblock %}</h1>
+                    <span class="header-subtitle">{% block page_subtitle %}{% endblock %}</span>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'notifications' %}" class="bell-btn" title="Notifications">🔔</a>
+                </div>
+            </header>
+
+            <!-- Django messages -->
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Page body -->
+            <div class="page-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/volleyball.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

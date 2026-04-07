@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Statistics — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+{% block content %}
+<div class="section-header"><h2 class="section-title">STATISTICS</h2></div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG ATTENDANCE</div>
+        <div style="font-size:2.2rem; font-weight:900; color:#f5a623;">45.3</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">WIN RATE</div>
+        <div style="font-size:2.2rem; font-weight:900; color:#27ae60;">68%</div>
+    </div>
+</div>
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.8rem; padding:40px;">
+    📊 Detailed statistics charts coming soon.
+</div>
+{% endblock %}
