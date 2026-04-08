@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Matches — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2 class="section-title">MATCHES</h2>
+    {% if request.user.profile.role == 'coach' %}
+    <a href="{% url 'schedule_match' %}" class="btn btn-orange">+ Schedule Match</a>
+    {% endif %}
+</div>
+
+<div style="display:flex; flex-direction:column; gap:20px;">
+
+    <!-- Upcoming Matches -->
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.75rem; font-weight:800; color:#f5a623; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">UPCOMING MATCHES</h3>
+        {% for match in upcoming_matches %}
+        <div style="background:rgba(255,255,255,0.06); border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <div style="font-size:0.82rem; font-weight:800;">{{ match.home_team.name }} vs {{ match.away_team.name }}</div>
+                <div style="font-size:0.68rem; color:#c8cce8; margin-top:3px;">{{ match.date|date:"D, d M Y • H:i" }}</div>
+                <div style="font-size:0.65rem; color:#7a80b0; margin-top:2px;">📍 {{ match.location }}</div>
+            </div>
+            <div style="text-align:right;">
+                <span style="background:#f5a623; color:#1a1f6e; padding:3px 10px; border-radius:4px; font-size:0.65rem; font-weight:700; text-transform:uppercase;">Upcoming</span>
+                {% if request.user.profile.role == 'coach' %}
+                <div style="margin-top:6px; display:flex; gap:6px; justify-content:flex-end;">
+                    <a href="{% url 'edit_match' match.pk %}" style="font-size:0.7rem; color:#f5a623; text-decoration:none; font-weight:600;">Edit</a>
+                    <form method="post" action="{% url 'cancel_match' match.pk %}" style="display:inline">
+                        {% csrf_token %}
+                        <button type="submit" style="background:none; border:none; color:#e84040; font-size:0.7rem; font-weight:600; cursor:pointer;" onclick="return confirm('Cancel this match?')">Cancel</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p style="font-size:0.75rem; color:#7a80b0; text-align:center; padding:14px 0;">No upcoming matches scheduled.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Past Matches -->
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.75rem; font-weight:800; color:#f5a623; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">PAST MATCHES</h3>
+        {% for match in past_matches %}
+        <div style="background:rgba(255,255,255,0.06); border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <div style="font-size:0.82rem; font-weight:800;">{{ match.home_team.name }} vs {{ match.away_team.name }}</div>
+                <div style="font-size:0.68rem; color:#c8cce8; margin-top:3px;">{{ match.date|date:"D, d M Y" }}</div>
+                <div style="font-size:0.65rem; color:#7a80b0;">📍 {{ match.location }}</div>
+            </div>
+            {% if match.home_score is not None %}
+            <div style="font-size:1.2rem; font-weight:900; color:#f5a623;">
+                {{ match.home_score }} – {{ match.away_score }}
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <p style="font-size:0.75rem; color:#7a80b0; text-align:center; padding:14px 0;">No past matches yet.</p>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}News — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+{% block content %}
+<div class="section-header"><h2 class="section-title">NEWS</h2></div>
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.8rem;">
+    📰 Team news and announcements coming in a future sprint.
+</div>
+{% endblock %}

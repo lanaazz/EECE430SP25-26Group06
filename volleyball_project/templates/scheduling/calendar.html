@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendar — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+
+    <div class="section-header">
+        <h2 class="section-title">CALENDAR</h2>
+        {% if is_coach %}
+        <div class="coach-actions">
+            <a href="{% url 'schedule_match' %}" class="btn btn-orange">+ Schedule Match</a>
+            <a href="{% url 'schedule_training' %}" class="btn btn-outline">+ Schedule Training</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="calendar-layout">
+
+        <div class="calendar-card">
+            <div class="calendar-nav">
+                <a href="?year={{ prev_year }}&month={{ prev_month }}" class="nav-arrow">&#8249;</a>
+                <span class="month-label">{{ month_name|upper }} {{ year }}</span>
+                <a href="?year={{ next_year }}&month={{ next_month }}" class="nav-arrow">&#8250;</a>
+            </div>
+
+            <div class="calendar-weekdays">
+                {% for day_name in weekdays %}
+                    <div class="weekday-header">{{ day_name }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="calendar-grid">
+                {% for day in calendar_days %}
+                    <div class="calendar-day {% if day.is_empty %}empty{% endif %} {% if day.is_today %}today{% endif %} {% if day.has_events %}has-events{% endif %}">
+                        {% if not day.is_empty %}
+                            <div class="day-number">{{ day.day }}</div>
+
+                            {% if day.events %}
+                                <div class="day-events">
+                                    {% for event in day.events %}
+                                        <div class="event-pill event-{{ event.type }}">
+                                            <span class="event-time">{{ event.time }}</span>
+                                            <span class="event-label">{{ event.label|truncatechars:14 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="events-sidebar">
+            <div class="events-section">
+                <h3 class="events-section-title">UPCOMING MATCHES</h3>
+                {% if upcoming_matches %}
+                    <ul class="events-list">
+                        {% for match in upcoming_matches %}
+                            <li class="event-item match-item">
+                                <div class="event-icon">🏐</div>
+                                <div class="event-details">
+                                    <span class="event-name">{{ match.home_team.name }} vs {{ match.away_team.name }}</span>
+                                    <span class="event-meta">{{ match.date|date:"D, d M Y • H:i" }}</span>
+                                    <span class="event-location">📍 {{ match.location }}</span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-events">No upcoming matches scheduled.</p>
+                {% endif %}
+            </div>
+
+            <div class="events-section">
+                <h3 class="events-section-title">UPCOMING TRAINING</h3>
+                {% if upcoming_trainings %}
+                    <ul class="events-list">
+                        {% for training in upcoming_trainings %}
+                            <li class="event-item training-item">
+                                <div class="event-icon">🏋️</div>
+                                <div class="event-details">
+                                    <span class="event-name">{{ training.title }}</span>
+                                    <span class="event-meta">{{ training.date|date:"D, d M Y • H:i" }}</span>
+                                    <span class="event-location">📍 {{ training.location }} · {{ training.duration_minutes }} min</span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-events">No upcoming training sessions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
