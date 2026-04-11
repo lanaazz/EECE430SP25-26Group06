@@ -6,6 +6,9 @@ urlpatterns = [
     path('calendar/', views.calendar_view, name='calendar'),
     path('calendar/api/events/', views.calendar_events_api, name='calendar_events_api'),
 
+    path('win-rate/', views.team_win_rate, name='team_win_rate'),
+    path('payments/', views.payment_status, name='payment_status'),
+    
     # Match scheduling (coach only)
     path('schedule/match/', views.schedule_match, name='schedule_match'),
     path('schedule/match/<int:pk>/edit/', views.edit_match, name='edit_match'),

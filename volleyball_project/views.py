@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from scheduling.models import Match, TrainingSession, Announcement
 
-
 @login_required
 def dashboard(request):
     today = timezone.now()
@@ -48,12 +47,41 @@ def matches(request):
     }
     return render(request, 'matches.html', context)
 
-
 @login_required
 def statistics(request):
-    context = {'active_page': 'statistics'}
-    return render(request, 'statistics.html', context)
+    user = request.user
 
+    if not hasattr(user, 'profile') or not user.profile.team:
+        win_rate = 0
+        wins = 0
+        total_matches = 0
+    else:
+        team = user.profile.team
+
+        matches = Match.objects.filter(status='completed').filter(
+            home_team=team
+        ) | Match.objects.filter(
+            status='completed',
+            away_team=team
+        )
+
+        total_matches = matches.count()
+        wins = 0
+
+        for match in matches:
+            if match.home_team == team and match.home_score > match.away_score:
+                wins += 1
+            elif match.away_team == team and match.away_score > match.home_score:
+                wins += 1
+
+        win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+
+    context = {
+        'active_page': 'statistics',
+        'win_rate': round(win_rate, 2),
+    }
+
+    return render(request, 'statistics.html', context)
 
 @login_required
 def messages_view(request):

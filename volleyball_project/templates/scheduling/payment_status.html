@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Payments</h2>
+
+{% if payments %}
+    <table>
+        <tr>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+        </tr>
+
+        {% for payment in payments %}
+        <tr>
+            <td>{{ payment.due_date }}</td>
+            <td>${{ payment.amount }}</td>
+            <td>{{ payment.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No payments found.</p>
+{% endif %}
+
+{% endblock %}

@@ -47,6 +47,13 @@
                 <a href="{% url 'statistics' %}" class="nav-item {% if active_page == 'statistics' %}active{% endif %}">
                     Statistics
                 </a>
+
+                {% if request.user.profile.role == 'player' or request.user.profile.role == 'parent' or request.user.profile.role == 'manager' %}
+                <a href="{% url 'payment_status' %}" class="nav-item {% if active_page == 'payments' %}active{% endif %}">
+                    Payments
+                </a>
+                {% endif %}
+                
                 <a href="{% url 'messages' %}" class="nav-item {% if active_page == 'messages' %}active{% endif %}" style="display:flex; justify-content:space-between; align-items:center;">
                     Messages
                     <span id="msg-badge" style="display:none; background:#f5a623; color:#1a1f6e; border-radius:50%; width:16px; height:16px; font-size:0.55rem; font-weight:900; align-items:center; justify-content:center;"></span>

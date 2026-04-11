@@ -8,7 +8,7 @@ import json
 import calendar
 from datetime import datetime, date
 
-from .models import Match, TrainingSession, Team, Announcement
+from .models import Match, TrainingSession, Team, Announcement, Payment
 from .forms import MatchForm, TrainingSessionForm
 
 
@@ -46,8 +46,16 @@ def calendar_view(request):
     # ----------------------------
     # Replace these with your real querysets
     # ----------------------------
-    upcoming_matches = []
-    upcoming_trainings = []
+    upcoming_matches = Match.objects.filter(
+        date__year=year,
+        date__month=month
+    ).order_by("date")
+
+    upcoming_trainings = TrainingSession.objects.filter(
+        date__year=year,
+        date__month=month
+    ).order_by("date")
+
     is_coach = False
 
     # Example if you have models:
@@ -286,3 +294,58 @@ def calendar_events_api(request):
         })
 
     return JsonResponse({'events': events})
+
+@login_required
+def team_win_rate(request):
+    user = request.user
+
+    if not hasattr(user, 'profile') or not user.profile.team:
+        return render(request, 'scheduling/win_rate.html', {'error': 'No team assigned'})
+
+    team = user.profile.team
+
+    matches = Match.objects.filter(
+        status='completed'
+    ).filter(
+        home_team=team
+    ) | Match.objects.filter(
+        status='completed',
+        away_team=team
+    )
+
+    total_matches = matches.count()
+    wins = 0
+
+    for match in matches:
+        if match.home_team == team and match.home_score > match.away_score:
+            wins += 1
+        elif match.away_team == team and match.away_score > match.home_score:
+            wins += 1
+
+    win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+
+    context = {
+        'team': team,
+        'wins': wins,
+        'total_matches': total_matches,
+        'win_rate': round(win_rate, 2)
+    }
+
+    return render(request, 'scheduling/win_rate.html', context)
+
+@login_required
+def payment_status(request):
+    allowed_roles = ['player', 'parent', 'manager']
+
+    if not hasattr(request.user, 'profile') or request.user.profile.role not in allowed_roles:
+        messages.error(request, "You are not authorized to access the payment page.")
+        return redirect('dashboard')
+
+    payments = Payment.objects.filter(player=request.user).order_by('-due_date')
+
+    context = {
+        'payments': payments,
+        'active_page': 'payments',
+    }
+
+    return render(request, 'scheduling/payment_status.html', context)

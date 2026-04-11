@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Team, UserProfile, Match, TrainingSession, Announcement
+from .models import Team, UserProfile, Match, TrainingSession, Announcement, Payment
 
 
 @admin.register(Team)
@@ -35,3 +35,9 @@ class TrainingSessionAdmin(admin.ModelAdmin):
 class AnnouncementAdmin(admin.ModelAdmin):
     list_display = ['title', 'team', 'created_by', 'created_at']
     list_filter = ['team']
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ['player', 'amount', 'status', 'due_date', 'paid_date']
+    list_filter = ['status']
+    search_fields = ['player__username']
