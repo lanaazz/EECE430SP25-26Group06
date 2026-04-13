@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Team, UserProfile, Match, TrainingSession, Announcement, Payment
+from .models import Team, UserProfile, Match, TrainingSession, Announcement, Payment, Achievement, PlayerAchievement, News
 
 
 @admin.register(Team)
@@ -41,3 +41,26 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ['player', 'amount', 'status', 'due_date', 'paid_date']
     list_filter = ['status']
     search_fields = ['player__username']
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    list_display = ['name', 'team', 'icon', 'created_at']
+    list_filter = ['team']
+    search_fields = ['name']
+
+
+@admin.register(PlayerAchievement)
+class PlayerAchievementAdmin(admin.ModelAdmin):
+    list_display = ['player', 'achievement', 'awarded_by', 'awarded_at']
+    list_filter = ['achievement', 'awarded_at']
+    search_fields = ['player__username', 'achievement__name']
+    date_hierarchy = 'awarded_at'
+
+
+@admin.register(News)
+class NewsAdmin(admin.ModelAdmin):
+    list_display = ['title', 'team', 'created_by', 'created_at', 'url']
+    list_filter = ['team', 'created_at']
+    search_fields = ['title', 'description']
+    date_hierarchy = 'created_at'

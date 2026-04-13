@@ -1,26 +1,189 @@
 {% extends "base.html" %}
+{% block title %}Payments — Volleyball Platform{% endblock %}
+{% block extra_css %}
+<style>
+    .payment-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .payment-table th {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.75rem;
+        color: #7a80b0;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .payment-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.85rem;
+        color: #c8cce8;
+    }
+    .payment-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .status-paid {
+        background: rgba(39, 174, 96, 0.2);
+        color: #27ae60;
+    }
+    .status-pending {
+        background: rgba(245, 166, 35, 0.2);
+        color: #f5a623;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
 
 {% block content %}
-<h2>My Payments</h2>
+<div class="section-header">
+    <h2 class="section-title">PAYMENTS</h2>
+    {% if is_parent_or_manager %}
+    <p style="color:#7a80b0; font-size:0.8rem; margin-top:4px;">Manage player payments</p>
+    {% else %}
+    <p style="color:#7a80b0; font-size:0.8rem; margin-top:4px;">Your payment status</p>
+    {% endif %}
+</div>
 
-{% if payments %}
-    <table>
-        <tr>
-            <th>Due Date</th>
-            <th>Amount</th>
-            <th>Status</th>
-        </tr>
+{% if is_parent_or_manager %}
+<!-- PARENT/MANAGER VIEW -->
+<div style="display:grid; grid-template-columns:250px 1fr; gap:20px;">
+    <!-- Player Selection Sidebar -->
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); height:fit-content;">
+        <div style="font-size:0.75rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Select Player</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            {% for player in available_players %}
+            <a href="?player_id={{ player.id }}" 
+               style="padding:10px; background:{% if player.id|stringformat:'s' == selected_player_id|stringformat:'s' %}rgba(245, 166, 35, 0.2); border-left:3px solid #f5a623{% else %}rgba(255,255,255,0.05){% endif %}; 
+                      border-radius:6px; color:#c8cce8; text-decoration:none; font-size:0.8rem; transition:all 0.2s; border-left:3px solid transparent;"
+               onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+               onmouseout="this.style.background='{% if player.id|stringformat:'s' == selected_player_id|stringformat:'s' %}rgba(245, 166, 35, 0.2){% else %}rgba(255,255,255,0.05){% endif %}'">
+                {{ player.first_name|default:player.username }} {{ player.last_name }}
+            </a>
+            {% empty %}
+            <div style="color:#7a80b0; font-size:0.8rem; padding:10px;">
+                No players in your team found.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
-        {% for payment in payments %}
-        <tr>
-            <td>{{ payment.due_date }}</td>
-            <td>${{ payment.amount }}</td>
-            <td>{{ payment.status }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <!-- Payment Details -->
+    <div>
+        {% if selected_player %}
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
+            <h3 style="font-size:1rem; font-weight:700; color:#f5f5f5; margin-bottom:16px;">{{ selected_player.first_name|default:selected_player.username }} {{ selected_player.last_name }} — Payments</h3>
+            
+            {% if payments %}
+            <div style="overflow-x:auto;">
+                <table class="payment-table">
+                    <thead>
+                        <tr>
+                            <th>Due Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr class="payment-row">
+                            <td>{{ payment.due_date|date:"M d, Y" }}</td>
+                            <td style="font-weight:600;">${{ payment.amount }}</td>
+                            <td>
+                                <span class="status-badge status-{{ payment.status|lower }}">
+                                    {{ payment.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if payment.status == 'pending' %}
+                                <form method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="payment_id" value="{{ payment.id }}">
+                                    <button type="submit" 
+                                            style="padding:6px 12px; background:#27ae60; color:#fff; border:none; border-radius:4px; 
+                                                   font--weight:700; font-size:0.7rem; cursor:pointer; transition:all 0.2s;"
+                                            onmouseover="this.style.background='#229954'"
+                                            onmouseout="this.style.background='#27ae60'">
+                                        Pay Now (Demo)
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span style="color:#95a5a6; font-size:0.75rem;">Paid on {{ payment.paid_date|date:"M d, Y" }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:24px; text-align:center; color:#7a80b0; font-size:0.85rem;">
+                💳 No payments found for this player.
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.85rem;">
+            👈 Select a player to view and manage their payments.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 {% else %}
-    <p>No payments found.</p>
+<!-- PLAYER VIEW -->
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
+    {% if payments %}
+    <div style="overflow-x:auto;">
+        <table class="payment-table">
+            <thead>
+                <tr>
+                    <th>Due Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr class="payment-row">
+                    <td>{{ payment.due_date|date:"M d, Y" }}</td>
+                    <td style="font-weight:600;">${{ payment.amount }}</td>
+                    <td>
+                        <span class="status-badge status-{{ payment.status|lower }}">
+                            {{ payment.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if payment.status == 'pending' %}
+                        <span style="color:#7a80b0; font-size:0.75rem;">Contact parent/manager to pay</span>
+                        {% else %}
+                        <span style="color:#27ae60; font-size:0.75rem;">✓ Paid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; color:#7a80b0; font-size:0.85rem; padding:32px;">
+        ✓ No pending payments!
+    </div>
+    {% endif %}
+</div>
 {% endif %}
 
 {% endblock %}

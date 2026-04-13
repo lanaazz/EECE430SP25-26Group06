@@ -3,8 +3,85 @@
 {% block page_title %}VOLLEYBALL{% endblock %}
 {% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
 {% block content %}
-<div class="section-header"><h2 class="section-title">NEWS</h2></div>
-<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.8rem;">
-    📰 Team news and announcements coming in a future sprint.
+<div class="section-header">
+    <h2 class="section-title">NEWS</h2>
+    {% if is_coach %}
+    <p style="color:#7a80b0; font-size:0.8rem; margin-top:4px;">Share links and updates with your team</p>
+    {% else %}
+    <p style="color:#7a80b0; font-size:0.8rem; margin-top:4px;">Team news and resources</p>
+    {% endif %}
 </div>
+
+{% if is_coach %}
+<!-- ADD NEWS FORM -->
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); margin-bottom:24px;">
+    <h3 style="font-size:0.9rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Share a Link or Video</h3>
+    <form method="POST" style="display:grid; gap:12px;">
+        {% csrf_token %}
+        <div>
+            <label style="display:block; font-size:0.75rem; color:#7a80b0; text-transform:uppercase; margin-bottom:4px; font-weight:700;">Title *</label>
+            <input type="text" name="title" placeholder="e.g., Team Strategy Guide" required style="width:100%; padding:10px; background:#1a1f6e; color:#f5f5f5; border:1px solid rgba(255,255,255,0.15); border-radius:6px; font-size:0.85rem;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label style="display:block; font-size:0.75rem; color:#7a80b0; text-transform:uppercase; margin-bottom:4px; font-weight:700;">Description</label>
+                <input type="text" name="description" placeholder="Brief description (optional)" style="width:100%; padding:10px; background:#1a1f6e; color:#f5f5f5; border:1px solid rgba(255,255,255,0.15); border-radius:6px; font-size:0.85rem;">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.75rem; color:#7a80b0; text-transform:uppercase; margin-bottom:4px; font-weight:700;">URL *</label>
+                <input type="url" name="url" placeholder="https://example.com or https://youtube.com/..." required style="width:100%; padding:10px; background:#1a1f6e; color:#f5f5f5; border:1px solid rgba(255,255,255,0.15); border-radius:6px; font-size:0.85rem;">
+            </div>
+        </div>
+        <button type="submit" style="padding:10px 20px; background:#3498db; color:#fff; border:none; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">+ Share Link</button>
+    </form>
+</div>
+{% endif %}
+
+<!-- NEWS LIST -->
+{% if news_list %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+    {% for item in news_list %}
+    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; transition:all 0.2s;" 
+       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(245, 166, 35, 0.2)'" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:0; border:1px solid rgba(255,255,255,0.15); overflow:hidden; height:100%; display:flex; flex-direction:column; cursor:pointer;">
+            <!-- Thumbnail -->
+            {% if item.get_thumbnail %}
+            <div style="width:100%; height:160px; background:linear-gradient(135deg, #1a1f6e 0%, #2d3561 100%); overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                <img src="{{ item.get_thumbnail }}" alt="{{ item.title }}" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            {% else %}
+            <div style="width:100%; height:160px; background:linear-gradient(135deg, #1a1f6e 0%, #2d3561 100%); display:flex; align-items:center; justify-content:center; font-size:3rem;">
+                🔗
+            </div>
+            {% endif %}
+            
+            <!-- Content -->
+            <div style="padding:16px; flex:1; display:flex; flex-direction:column;">
+                <div style="font-weight:700; color:#f5f5f5; font-size:0.9rem; margin-bottom:8px; line-height:1.3;">{{ item.title }}</div>
+                {% if item.description %}
+                <div style="font-size:0.75rem; color:#7a80b0; margin-bottom:auto; line-height:1.4;">{{ item.description }}</div>
+                {% endif %}
+                <div style="font-size:0.7rem; color:#95a5a6; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05);">
+                    Shared by {{ item.created_by.first_name|default:item.created_by.username }} · {{ item.created_at|date:"M d, Y" }}
+                </div>
+            </div>
+            
+            <!-- URL Badge -->
+            <div style="padding:8px 16px; background:rgba(52, 152, 219, 0.1); border-top:1px solid rgba(255,255,255,0.05); font-size:0.7rem; color:#3498db; font-weight:700; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">
+                🔗 View Link
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.85rem;">
+    {% if is_coach %}
+    📰 No news shared yet. Start by sharing a link above!
+    {% else %}
+    📰 No news shared yet. Check back soon!
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}

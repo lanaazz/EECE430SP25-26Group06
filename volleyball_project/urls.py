@@ -17,6 +17,12 @@ urlpatterns = [
     path('statistics/',   project_views.statistics,     name='statistics'),
     path('news/',         project_views.news,           name='news'),
     path('achievements/', project_views.achievements,   name='achievements'),
+    path('notifications/', project_views.notifications, name='notifications'),
+
+    # Achievement management endpoints
+    path('achievements/add/', project_views.add_achievement, name='add_achievement'),
+    path('achievements/award/', project_views.award_achievement, name='award_achievement'),
+    path('achievements/remove/', project_views.remove_achievement, name='remove_achievement'),
 
     # Messaging & Notifications (SCRUM-20)
     path('', include('messaging.urls')),

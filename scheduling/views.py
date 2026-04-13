@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.db.models import Q
 import json
 import calendar
 from datetime import datetime, date
@@ -43,24 +44,31 @@ def calendar_view(request):
     month_name = calendar.month_name[month]
     weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-    # ----------------------------
-    # Replace these with your real querysets
-    # ----------------------------
-    upcoming_matches = Match.objects.filter(
-        date__year=year,
-        date__month=month
-    ).order_by("date")
-
-    upcoming_trainings = TrainingSession.objects.filter(
-        date__year=year,
-        date__month=month
-    ).order_by("date")
-
+    # Get user's team for filtering
+    user_team = None
     is_coach = False
+    if hasattr(request.user, 'profile'):
+        user_team = request.user.profile.team
+        is_coach = request.user.profile.role == 'coach'
 
-    # Example if you have models:
-    # upcoming_matches = Match.objects.filter(date__year=year, date__month=month).order_by("date")
-    # upcoming_trainings = Training.objects.filter(date__year=year, date__month=month).order_by("date")
+    # ----------------------------
+    # Filter by user's team
+    # ----------------------------
+    if user_team:
+        upcoming_matches = Match.objects.filter(
+            Q(home_team=user_team) | Q(away_team=user_team),
+            date__year=year,
+            date__month=month
+        ).order_by("date")
+
+        upcoming_trainings = TrainingSession.objects.filter(
+            team=user_team,
+            date__year=year,
+            date__month=month
+        ).order_by("date")
+    else:
+        upcoming_matches = []
+        upcoming_trainings = []
 
     # Build events by day
     events_by_day = {}
@@ -335,17 +343,84 @@ def team_win_rate(request):
 
 @login_required
 def payment_status(request):
+    """Display and manage payments for players, parents, and managers."""
+    from django.contrib.auth.models import User
+    
     allowed_roles = ['player', 'parent', 'manager']
 
     if not hasattr(request.user, 'profile') or request.user.profile.role not in allowed_roles:
         messages.error(request, "You are not authorized to access the payment page.")
         return redirect('dashboard')
 
-    payments = Payment.objects.filter(player=request.user).order_by('-due_date')
+    user_team = request.user.profile.team if hasattr(request.user, 'profile') else None
 
-    context = {
-        'payments': payments,
-        'active_page': 'payments',
-    }
+    # PLAYER VIEW - See only their payments
+    if request.user.profile.role == 'player':
+        payments = Payment.objects.filter(player=request.user).order_by('-due_date')
+        context = {
+            'payments': payments,
+            'active_page': 'payments',
+            'is_player': True,
+            'is_parent_or_manager': False,
+        }
+        return render(request, 'scheduling/payment_status.html', context)
+    
+    # PARENT/MANAGER VIEW - Select a player and see/pay their payments
+    else:
+        selected_player_id = request.GET.get('player_id')
+        selected_player = None
+        payments = []
 
-    return render(request, 'scheduling/payment_status.html', context)
+        # Get all players from the same team (if user has a team)
+        available_players = []
+        if user_team:
+            available_players = User.objects.filter(
+                profile__team=user_team,
+                profile__role='player'
+            ).select_related('profile').order_by('username')
+
+        # Process payment form submission
+        if request.method == 'POST' and selected_player_id:
+            try:
+                selected_player = User.objects.get(id=selected_player_id)
+                # Verify player is from same team
+                if selected_player.profile.team != user_team:
+                    messages.error(request, "Cannot access this player's payments.")
+                    return redirect('payment_status')
+                
+                payment_id = request.POST.get('payment_id')
+                try:
+                    payment = Payment.objects.get(id=payment_id, player=selected_player)
+                    # Mark as paid (demo)
+                    payment.status = 'paid'
+                    payment.paid_date = timezone.now().date()
+                    payment.save()
+                    messages.success(request, f"Payment of ${payment.amount} marked as paid (Demo)!")
+                    return redirect(f'payment_status?player_id={selected_player_id}')
+                except Payment.DoesNotExist:
+                    messages.error(request, "Payment not found.")
+            except User.DoesNotExist:
+                messages.error(request, "Player not found.")
+                return redirect('payment_status')
+
+        # Load selected player's payments
+        if selected_player_id:
+            try:
+                selected_player = User.objects.get(id=selected_player_id)
+                if selected_player.profile.team != user_team:
+                    messages.error(request, "Cannot access this player's payments.")
+                    return redirect('payment_status')
+                payments = Payment.objects.filter(player=selected_player).order_by('-due_date')
+            except User.DoesNotExist:
+                pass
+
+        context = {
+            'payments': payments,
+            'active_page': 'payments',
+            'is_player': False,
+            'is_parent_or_manager': True,
+            'available_players': available_players,
+            'selected_player': selected_player,
+            'selected_player_id': selected_player_id,
+        }
+        return render(request, 'scheduling/payment_status.html', context)

@@ -114,3 +114,71 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.player.username} - {self.status} - ${self.amount}"
+
+
+class Achievement(models.Model):
+    """Achievement badges that can be awarded to players."""
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='achievements')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, default='🏆')  # emoji or icon name
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ('team', 'name')
+
+    def __str__(self):
+        return f"{self.name} ({self.team.name})"
+
+
+class PlayerAchievement(models.Model):
+    """Relationship between players and achievements."""
+    player = models.ForeignKey(User, on_delete=models.CASCADE, related_name='player_achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='awarded_to')
+    awarded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='awarded_achievements')
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-awarded_at']
+        unique_together = ('player', 'achievement')
+
+    def __str__(self):
+        return f"{self.player.username} — {self.achievement.name}"
+
+
+class News(models.Model):
+    """News and links shared by coaches with their team."""
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='news')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    url = models.URLField()
+    # For YouTube thumbnails or custom images
+    thumbnail_url = models.URLField(blank=True, help_text="URL to thumbnail image. YouTube links auto-generate.")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_news')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.team.name})"
+
+    def get_thumbnail(self):
+        """Return thumbnail URL, auto-generate from YouTube if needed."""
+        if self.thumbnail_url:
+            return self.thumbnail_url
+        
+        # Auto-extract YouTube thumbnail
+        if 'youtube.com' in self.url or 'youtu.be' in self.url:
+            video_id = None
+            if 'youtube.com' in self.url:
+                video_id = self.url.split('v=')[1].split('&')[0] if 'v=' in self.url else None
+            elif 'youtu.be' in self.url:
+                video_id = self.url.split('youtu.be/')[1].split('?')[0] if 'youtu.be/' in self.url else None
+            
+            if video_id:
+                return f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg'
+        
+        return None
