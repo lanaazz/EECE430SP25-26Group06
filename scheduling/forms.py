@@ -1,5 +1,5 @@
 from django import forms
-from .models import Match, TrainingSession
+from .models import Match, TrainingSession, MatchStats
 from django.utils import timezone
 
 
@@ -62,3 +62,34 @@ class TrainingSessionForm(forms.ModelForm):
         if date and date < timezone.now():
             raise forms.ValidationError("Training date must be in the future.")
         return date
+
+
+class MatchStatsForm(forms.ModelForm):
+    """Form for coaches to add/edit match statistics."""
+    
+    class Meta:
+        model = MatchStats
+        fields = [
+            'home_strikes', 'home_blocks', 'home_service_aces', 'home_errors',
+            'away_strikes', 'away_blocks', 'away_service_aces', 'away_errors'
+        ]
+        widgets = {
+            'home_strikes': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'home_blocks': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'home_service_aces': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'home_errors': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'away_strikes': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'away_blocks': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'away_service_aces': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+            'away_errors': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'placeholder': '0'}),
+        }
+        labels = {
+            'home_strikes': 'Home Strikes',
+            'home_blocks': 'Home Blocks',
+            'home_service_aces': 'Home Service Aces',
+            'home_errors': 'Home Errors',
+            'away_strikes': 'Away Strikes',
+            'away_blocks': 'Away Blocks',
+            'away_service_aces': 'Away Service Aces',
+            'away_errors': 'Away Errors',
+        }

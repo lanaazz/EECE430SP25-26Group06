@@ -122,3 +122,88 @@ def change_password_view(request):
         'form': form,
         'active_page': 'profile',
     })
+
+
+@login_required
+def manage_team_members(request):
+    """Allow coaches and managers to add/remove players from team."""
+    user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+    
+    if not user_profile or user_profile.role not in ['coach', 'manager']:
+        messages.error(request, "Only coaches and managers can manage team members.")
+        return redirect('dashboard')
+    
+    user_team = user_profile.team
+    if not user_team:
+        messages.error(request, "You are not assigned to a team.")
+        return redirect('dashboard')
+    
+    # Get all team members
+    team_members = UserProfile.objects.filter(team=user_team).select_related('user')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add':
+            username = request.POST.get('username', '').strip()
+            role = request.POST.get('role', 'player')
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            password = request.POST.get('password', '').strip()
+            
+            # Check if user exists
+            if User.objects.filter(username=username).exists():
+                # Add existing user to team
+                user = User.objects.get(username=username)
+                profile = user.profile if hasattr(user, 'profile') else UserProfile.objects.create(user=user)
+                profile.team = user_team
+                profile.role = role
+                profile.save()
+                messages.success(request, f"User '{username}' added to team as {profile.get_role_display()}.")
+            else:
+                # Create new user and add to team
+                try:
+                    if not email or User.objects.filter(email=email).exists():
+                        messages.error(request, "Email is required and must be unique.")
+                    elif not password or len(password) < 8:
+                        messages.error(request, "Password is required and must be at least 8 characters.")
+                    else:
+                        new_user = User.objects.create_user(
+                            username=username,
+                            email=email,
+                            password=password,
+                            first_name=first_name,
+                            last_name=last_name,
+                        )
+                        UserProfile.objects.create(
+                            user=new_user,
+                            team=user_team,
+                            role=role,
+                        )
+                        messages.success(request, f"New user '{username}' created and added to team as {role}.")
+                except Exception as e:
+                    messages.error(request, f"Error creating user: {str(e)}")
+            
+            return redirect('manage_team_members')
+        
+        elif action == 'remove':
+            member_id = request.POST.get('member_id')
+            try:
+                member = UserProfile.objects.get(pk=member_id, team=user_team)
+                username = member.user.username
+                member.team = None
+                member.save()
+                messages.success(request, f"User '{username}' removed from team.")
+            except UserProfile.DoesNotExist:
+                messages.error(request, "Member not found.")
+            
+            return redirect('manage_team_members')
+    
+    context = {
+        'team_members': team_members,
+        'team': user_team,
+        'active_page': 'manage_team',
+        'role_choices': UserProfile.ROLE_CHOICES,
+    }
+    return render(request, 'accounts/manage_team_members.html', context)

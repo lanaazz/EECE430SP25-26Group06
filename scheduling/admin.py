@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Team, UserProfile, Match, TrainingSession, Announcement, Payment, Achievement, PlayerAchievement, News
+from .models import Team, UserProfile, Match, TrainingSession, Announcement, Payment, Achievement, PlayerAchievement, News, MatchStats
 
 
 @admin.register(Team)
@@ -63,4 +63,12 @@ class NewsAdmin(admin.ModelAdmin):
     list_display = ['title', 'team', 'created_by', 'created_at', 'url']
     list_filter = ['team', 'created_at']
     search_fields = ['title', 'description']
+    date_hierarchy = 'created_at'
+
+
+@admin.register(MatchStats)
+class MatchStatsAdmin(admin.ModelAdmin):
+    list_display = ['match', 'home_strikes', 'home_blocks', 'away_strikes', 'away_blocks']
+    list_filter = ['match__home_team', 'match__away_team']
+    search_fields = ['match__home_team__name', 'match__away_team__name']
     date_hierarchy = 'created_at'

@@ -6,6 +6,12 @@ urlpatterns = [
     path('calendar/', views.calendar_view, name='calendar'),
     path('calendar/api/events/', views.calendar_events_api, name='calendar_events_api'),
 
+    # Match details (view)
+    path('match/<int:pk>/', views.match_detail, name='match_detail'),
+    
+    # Training details (view)
+    path('training/<int:pk>/', views.training_detail, name='training_detail'),
+
     path('win-rate/', views.team_win_rate, name='team_win_rate'),
     path('payments/', views.payment_status, name='payment_status'),
     

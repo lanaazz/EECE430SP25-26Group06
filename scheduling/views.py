@@ -9,8 +9,8 @@ import json
 import calendar
 from datetime import datetime, date
 
-from .models import Match, TrainingSession, Team, Announcement, Payment
-from .forms import MatchForm, TrainingSessionForm
+from .models import Match, TrainingSession, Team, Announcement, Payment, MatchStats
+from .forms import MatchForm, TrainingSessionForm, MatchStatsForm
 
 
 def coach_required(view_func):
@@ -83,6 +83,7 @@ def calendar_view(request):
             "status": getattr(match, "status", "scheduled"),
             "label": f"{match.home_team.name} vs {match.away_team.name}",
             "time": match.date.strftime("%H:%M"),
+            "url": f"/scheduling/match/{match.id}/" if hasattr(match, 'id') else "#",
         })
 
     # Example for trainings
@@ -95,6 +96,7 @@ def calendar_view(request):
             "status": getattr(training, "status", "scheduled"),
             "label": training.title,
             "time": training.date.strftime("%H:%M"),
+            "url": f"/scheduling/training/{training.id}/" if hasattr(training, 'id') else "#",
         })
 
     # Flatten calendar into one list for template
@@ -424,3 +426,43 @@ def payment_status(request):
             'selected_player_id': selected_player_id,
         }
         return render(request, 'scheduling/payment_status.html', context)
+
+
+@login_required
+def match_detail(request, pk):
+    """View match details including stats."""
+    match = get_object_or_404(Match, pk=pk)
+    
+    # Check if user's team is involved in this match
+    user_team = request.user.profile.team if hasattr(request.user, 'profile') else None
+    if user_team and match.home_team != user_team and match.away_team != user_team:
+        messages.error(request, "You can only view matches for your team.")
+        return redirect('calendar')
+    
+    # Get match stats if available
+    stats = getattr(match, 'stats', None)
+    
+    context = {
+        'match': match,
+        'stats': stats,
+        'active_page': 'matches',
+    }
+    return render(request, 'scheduling/match_detail.html', context)
+
+
+@login_required
+def training_detail(request, pk):
+    """View training session details."""
+    training = get_object_or_404(TrainingSession, pk=pk)
+    
+    # Check if user's team is involved
+    user_team = request.user.profile.team if hasattr(request.user, 'profile') else None
+    if user_team and training.team != user_team:
+        messages.error(request, "You can only view training sessions for your team.")
+        return redirect('calendar')
+    
+    context = {
+        'training': training,
+        'active_page': 'training',
+    }
+    return render(request, 'scheduling/training_detail.html', context)

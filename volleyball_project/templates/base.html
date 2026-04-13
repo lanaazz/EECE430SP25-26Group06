@@ -67,6 +67,11 @@
                 <a href="{% url 'profile' %}" class="nav-item {% if active_page == 'profile' %}active{% endif %}" style="margin-top:auto;">
                     Profile
                 </a>
+                {% if request.user.profile.role in 'coach,manager' %}
+                <a href="{% url 'manage_team_members' %}" class="nav-item {% if active_page == 'manage_team' %}active{% endif %}">
+                    Manage Team
+                </a>
+                {% endif %}
                 <a href="{% url 'logout' %}" class="nav-item" style="color:#ff8080;">
                     Logout
                 </a>

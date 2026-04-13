@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from scheduling.models import UserProfile, Team
+import re
 
 
 class RegisterForm(forms.ModelForm):
@@ -40,7 +41,21 @@ class RegisterForm(forms.ModelForm):
         username = self.cleaned_data.get('username')
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("This username is already taken.")
+        if not re.match(r'^[a-zA-Z0-9]+$', username):
+            raise forms.ValidationError("Username can only contain letters and numbers (no spaces, dashes, or special characters).")
         return username
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get('first_name')
+        if first_name and not re.match(r'^[a-zA-Z\s\-\']+$', first_name):
+            raise forms.ValidationError("First name can only contain letters, spaces, hyphens, and apostrophes.")
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data.get('last_name')
+        if last_name and not re.match(r'^[a-zA-Z\s\-\']+$', last_name):
+            raise forms.ValidationError("Last name can only contain letters, spaces, hyphens, and apostrophes.")
+        return last_name
 
     def clean_email(self):
         email = self.cleaned_data.get('email')

@@ -182,3 +182,26 @@ class News(models.Model):
                 return f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg'
         
         return None
+
+
+class MatchStats(models.Model):
+    """Statistics for a match - tracks strikes, blocks, service aces, etc."""
+    match = models.OneToOneField(Match, on_delete=models.CASCADE, related_name='stats')
+    
+    # Home team stats
+    home_strikes = models.IntegerField(default=0, help_text="Successful attacks/strikes")
+    home_blocks = models.IntegerField(default=0, help_text="Successful blocks")
+    home_service_aces = models.IntegerField(default=0, help_text="Service aces (unreturnable serves)")
+    home_errors = models.IntegerField(default=0, help_text="Unforced errors")
+    
+    # Away team stats
+    away_strikes = models.IntegerField(default=0, help_text="Successful attacks/strikes")
+    away_blocks = models.IntegerField(default=0, help_text="Successful blocks")
+    away_service_aces = models.IntegerField(default=0, help_text="Service aces (unreturnable serves)")
+    away_errors = models.IntegerField(default=0, help_text="Unforced errors")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Stats for {self.match}"

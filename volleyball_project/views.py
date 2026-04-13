@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q
+from django.urls import reverse
 from scheduling.models import Match, TrainingSession, Announcement, Team, UserProfile, Achievement, PlayerAchievement, News, Payment
 from messaging.models import Notification
 from django.http import JsonResponse
@@ -95,17 +96,19 @@ def statistics(request):
         total_matches = 0
         losses = 0
         match_data = []
+        avg_stats = {}
     else:
         team = user.profile.team
 
         matches = Match.objects.filter(status='completed').filter(
             Q(home_team=team) | Q(away_team=team)
-        ).select_related('home_team', 'away_team').order_by('date')
+        ).select_related('home_team', 'away_team').prefetch_related('stats').order_by('date')
 
         total_matches = matches.count()
         wins = 0
         losses = 0
         match_data = []
+        stats_list = []
 
         for match in matches:
             if match.home_team == team:
@@ -134,7 +137,33 @@ def statistics(request):
                 'result': result,
             })
 
+            # Collect match stats
+            if hasattr(match, 'stats'):
+                stats = match.stats
+                if match.home_team == team:
+                    stats_list.append({
+                        'strikes': stats.home_strikes,
+                        'blocks': stats.home_blocks,
+                        'service_aces': stats.home_service_aces,
+                        'errors': stats.home_errors,
+                    })
+                else:
+                    stats_list.append({
+                        'strikes': stats.away_strikes,
+                        'blocks': stats.away_blocks,
+                        'service_aces': stats.away_service_aces,
+                        'errors': stats.away_errors,
+                    })
+
         win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
+
+        # Calculate averages
+        avg_stats = {}
+        if stats_list:
+            avg_stats['strikes'] = round(sum(s['strikes'] for s in stats_list) / len(stats_list), 1)
+            avg_stats['blocks'] = round(sum(s['blocks'] for s in stats_list) / len(stats_list), 1)
+            avg_stats['service_aces'] = round(sum(s['service_aces'] for s in stats_list) / len(stats_list), 1)
+            avg_stats['errors'] = round(sum(s['errors'] for s in stats_list) / len(stats_list), 1)
 
     context = {
         'active_page': 'statistics',
@@ -143,6 +172,7 @@ def statistics(request):
         'losses': wins and total_matches - wins or 0,
         'total_matches': total_matches,
         'match_data': match_data,
+        'avg_stats': avg_stats,
     }
 
     return render(request, 'statistics.html', context)
@@ -325,7 +355,7 @@ def add_achievement(request):
         achievement.save()
         messages.info(request, f"Achievement '{name}' updated")
 
-    return redirect('achievements')
+    return redirect(reverse('achievements'))
 
 
 @login_required
@@ -370,7 +400,7 @@ def award_achievement(request):
     else:
         messages.success(request, f"Achievement awarded to {player.username}!")
 
-    return redirect(f'achievements?player_id={player_id}')
+    return redirect(reverse('achievements') + f'?player_id={player_id}')
 
 
 @login_required
@@ -395,10 +425,10 @@ def remove_achievement(request):
         player_id = award.player.profile.id
         award.delete()
         messages.success(request, "Achievement removed!")
-        return redirect(f'achievements?player_id={player_id}')
+        return redirect(reverse('achievements') + f'?player_id={player_id}')
     except PlayerAchievement.DoesNotExist:
         messages.error(request, "Award not found")
-        return redirect('achievements')
+        return redirect(reverse('achievements'))
 
 
 @login_required

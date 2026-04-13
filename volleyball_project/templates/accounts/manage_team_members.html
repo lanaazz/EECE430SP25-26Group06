@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Team Members{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Manage Team Members</h1>
+        <p class="subtitle">{{ team.name }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Add Member Form (Left Column) -->
+        <div class="card lg:col-span-2">
+            <h2 class="card-title">Add Member to Team</h2>
+            <form method="POST" class="form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter username" required>
+                    <small class="form-help">If user exists, they will be added to team. If not, a new account will be created.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" class="form-input" required>
+                        {% for value, label in role_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="user@example.com">
+                    <small class="form-help">Required for new user creation. Must be unique.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Min. 8 characters">
+                    <small class="form-help">Required for new user creation. Minimum 8 characters.</small>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input type="text" id="first_name" name="first_name" class="form-input" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" class="form-input" placeholder="Optional">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>✓ Add Member</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Team Stats (Right Column) -->
+        <div class="card">
+            <h3 class="card-title">Team Stats</h3>
+            <div class="text-center py-4">
+                <div class="stat-box">
+                    <div class="stat-number">{{ team_members.count }}</div>
+                    <div class="stat-label">Total Members</div>
+                </div>
+                <hr class="my-4">
+                <div class="text-sm text-gray-600">
+                    {% with coaches=team_members|dictsort:"user.username"|length %}
+                    {{ team.name }}<br>
+                    Members
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Team Members -->
+    <div class="card mt-6">
+        <h2 class="card-title">Current Team Members ({{ team_members.count }})</h2>
+        
+        {% if team_members %}
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Email</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in team_members %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="font-medium">{{ member.user.username }}</td>
+                                <td>{{ member.user.first_name }} {{ member.user.last_name|default:"—" }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if member.role == 'coach' %}badge-blue{% endif %}
+                                        {% if member.role == 'captain' %}badge-green{% endif %}
+                                        {% if member.role == 'player' %}badge-purple{% endif %}
+                                        {% if member.role == 'parent' %}badge-yellow{% endif %}
+                                        {% if member.role == 'manager' %}badge-red{% endif %}
+                                    ">
+                                        {{ member.get_role_display }}
+                                    </span>
+                                </td>
+                                <td class="text-sm text-gray-600">{{ member.user.email }}</td>
+                                <td class="text-center">
+                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Remove {{ member.user.username }} from team?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="remove">
+                                        <input type="hidden" name="member_id" value="{{ member.id }}">
+                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p class="text-gray-500">No team members yet. Add one above.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'dashboard' %}" class="btn btn-gray">← Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+    .stat-box {
+        padding: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #3b82f6;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .badge-blue {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-green {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-purple {
+        background-color: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    .badge-yellow {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-red {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .empty-state {
+        padding: 3rem 1rem;
+        text-align: center;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-danger {
+        background-color: #ef4444;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background-color: #dc2626;
+    }
+
+    .btn-gray {
+        background-color: #6b7280;
+        color: white;
+    }
+
+    .btn-gray:hover {
+        background-color: #4b5563;
+    }
+</style>
+{% endblock %}

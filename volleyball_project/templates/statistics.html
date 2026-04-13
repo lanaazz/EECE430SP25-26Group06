@@ -24,7 +24,26 @@
 </div>
 
 {% if match_data %}
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; margin-bottom:24px;">
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG STRIKES</div>
+        <div style="font-size:1.8rem; font-weight:900; color:#3498db;">{{ avg_stats.strikes|default:"—" }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG BLOCKS</div>
+        <div style="font-size:1.8rem; font-weight:900; color:#9b59b6;">{{ avg_stats.blocks|default:"—" }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG ACES</div>
+        <div style="font-size:1.8rem; font-weight:900; color:#1abc9c;">{{ avg_stats.service_aces|default:"—" }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
+        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG ERRORS</div>
+        <div style="font-size:1.8rem; font-weight:900; color:#e74c3c;">{{ avg_stats.errors|default:"—" }}</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
     <!-- Win/Loss Chart -->
     <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
         <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Win/Loss Ratio</h3>
@@ -35,6 +54,12 @@
     <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
         <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Recent Matches</h3>
         <canvas id="performanceChart" style="max-height:250px;"></canvas>
+    </div>
+
+    <!-- Stats Overview -->
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Team Performance</h3>
+        <canvas id="statsChart" style="max-height:250px;"></canvas>
     </div>
 </div>
 
@@ -136,6 +161,43 @@
                 },
                 x: {
                     grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#7a80b0' }
+                }
+            }
+        }
+    });
+
+    // Team Stats Chart
+    const statsCtx = document.getElementById('statsChart').getContext('2d');
+    new Chart(statsCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Strikes', 'Blocks', 'Service Aces', 'Errors'],
+            datasets: [{
+                label: 'Average Performance',
+                data: [{{ avg_stats.strikes|default:0 }}, {{ avg_stats.blocks|default:0 }}, {{ avg_stats.service_aces|default:0 }}, {{ avg_stats.errors|default:0 }}],
+                borderColor: '#f5a623',
+                backgroundColor: 'rgba(245, 166, 35, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#f5a623',
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#c8cce8',
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
                     ticks: { color: '#7a80b0' }
                 }
             }

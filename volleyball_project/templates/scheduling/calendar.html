@@ -42,10 +42,10 @@
                             {% if day.events %}
                                 <div class="day-events">
                                     {% for event in day.events %}
-                                        <div class="event-pill event-{{ event.type }}">
+                                        <a href="{{ event.url }}" class="event-pill event-{{ event.type }}" title="{{ event.label }}">
                                             <span class="event-time">{{ event.time }}</span>
                                             <span class="event-label">{{ event.label|truncatechars:14 }}</span>
-                                        </div>
+                                        </a>
                                     {% endfor %}
                                 </div>
                             {% endif %}

@@ -31,8 +31,22 @@ def inbox(request):
             'others': other_participants,
         })
 
-    # All users to start a new DM with
-    all_users = User.objects.exclude(id=request.user.id).select_related('profile')
+    # Filter users based on role
+    user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+    user_team = user_profile.team if user_profile else None
+    user_role = user_profile.role if user_profile else None
+    
+    if user_role in ['coach', 'manager']:
+        # Coaches and managers can message anyone
+        all_users = User.objects.exclude(id=request.user.id).select_related('profile')
+    else:
+        # Players, parents, captains can only message their team members
+        if user_team:
+            all_users = User.objects.filter(
+                profile__team=user_team
+            ).exclude(id=request.user.id).select_related('profile')
+        else:
+            all_users = User.objects.none()
 
     context = {
         'conv_data': conv_data,
@@ -106,6 +120,20 @@ def start_direct_message(request, user_id):
 
     if other_user == request.user:
         return redirect('inbox')
+
+    # Check permissions: can current user message other_user?
+    user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+    other_profile = other_user.profile if hasattr(other_user, 'profile') else None
+    user_role = user_profile.role if user_profile else None
+    user_team = user_profile.team if user_profile else None
+    other_team = other_profile.team if other_profile else None
+    
+    # Coaches and managers can message anyone
+    if user_role not in ['coach', 'manager']:
+        # Players, parents, captains can only message their team members
+        if not user_team or user_team != other_team:
+            django_messages.error(request, "You can only message members of your team.")
+            return redirect('inbox')
 
     # Check if DM already exists
     existing = Conversation.objects.filter(

@@ -351,8 +351,9 @@ body {
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  margin-bottom: 4px;
+  gap: 3px;
+  margin-bottom: 0px;
+  width: 100%;
 }
 
 .weekday-header {
@@ -360,14 +361,17 @@ body {
   font-size: 0.68rem;
   font-weight: 700;
   color: var(--gray-text);
-  padding: 4px 0;
+  padding: 8px 0 4px 0;
   text-transform: uppercase;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
 }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 3px;
+  width: 100%;
 }
 
 .calendar-day {
@@ -448,6 +452,34 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Clickable event pills */
+.event-pill {
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 0.65rem;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.event-pill:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
+.event-pill.event-match {
+  background: var(--orange);
+  color: var(--blue-dark);
+}
+
+.event-pill.event-training {
+  background: var(--blue-light);
+  color: var(--white);
 }
 
 /* ===== Events sidebar ===== */
