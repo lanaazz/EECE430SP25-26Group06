@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Volleyball Platform</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/volleyball.css' %}">
+    <style>
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px 0; }
+        .auth-card {
+            background: var(--blue-sidebar);
+            border-radius: var(--radius);
+            padding: 36px 32px;
+            width: 100%; max-width: 420px;
+            box-shadow: var(--shadow);
+        }
+        .auth-header { text-align:center; margin-bottom:26px; }
+        .auth-avatar {
+            width:60px; height:60px; border-radius:50%;
+            background:var(--blue-light); margin:0 auto 14px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.8rem; border:3px solid var(--orange);
+        }
+        .auth-title { font-size:1rem; font-weight:900; color:var(--white); }
+        .auth-subtitle { font-size:0.72rem; color:var(--orange); font-weight:700; margin-top:2px; }
+
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+        .auth-field { margin-bottom:13px; }
+        .auth-field label {
+            display:block; font-size:0.68rem; font-weight:700;
+            color:var(--gray-mid); margin-bottom:5px;
+            text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .auth-field input,
+        .auth-field select {
+            width:100%; padding:9px 12px;
+            background:rgba(255,255,255,0.1);
+            border:1px solid var(--border);
+            border-radius:var(--radius-sm);
+            color:var(--white); font-size:0.82rem; outline:none;
+            transition:border-color 0.15s;
+        }
+        .auth-field input:focus,
+        .auth-field select:focus { border-color:var(--orange); }
+        .auth-field select option { background:var(--blue-dark); }
+
+        .field-error { font-size:0.7rem; color:#ff8080; margin-top:3px; }
+
+        .form-errors {
+            background:rgba(232,64,64,0.12); border:1px solid var(--red);
+            border-radius:var(--radius-sm); padding:10px 12px;
+            font-size:0.75rem; color:#ff8080; margin-bottom:14px;
+        }
+
+        .section-label {
+            font-size:0.65rem; font-weight:800; color:var(--orange);
+            text-transform:uppercase; letter-spacing:1px;
+            border-bottom:1px solid var(--border);
+            padding-bottom:5px; margin:16px 0 12px;
+        }
+
+        .auth-btn {
+            width:100%; padding:12px;
+            background:var(--orange); color:var(--blue-dark);
+            border:none; border-radius:var(--radius-sm);
+            font-size:0.88rem; font-weight:900; cursor:pointer;
+            margin-top:8px; text-transform:uppercase; letter-spacing:1.5px;
+            transition:background 0.15s;
+        }
+        .auth-btn:hover { background:var(--orange-dark); }
+
+        .auth-footer { text-align:center; margin-top:16px; font-size:0.75rem; color:var(--gray-text); }
+        .auth-footer a { color:var(--orange); text-decoration:none; font-weight:600; }
+        .auth-footer a:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-avatar">🏐</div>
+            <div class="auth-title">CREATE ACCOUNT</div>
+            <div class="auth-subtitle">VOLLEYBALL PLATFORM</div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="form-errors">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="section-label">Personal Info</div>
+            <div class="form-row">
+                <div class="auth-field">
+                    <label>First Name</label>
+                    {{ form.first_name }}
+                    {% for e in form.first_name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="auth-field">
+                    <label>Last Name</label>
+                    {{ form.last_name }}
+                    {% for e in form.last_name.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label>Username *</label>
+                {{ form.username }}
+                {% for e in form.username.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="auth-field">
+                <label>Email</label>
+                {{ form.email }}
+                {% for e in form.email.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="section-label">Password</div>
+            <div class="form-row">
+                <div class="auth-field">
+                    <label>Password *</label>
+                    {{ form.password1 }}
+                    {% for e in form.password1.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="auth-field">
+                    <label>Confirm *</label>
+                    {{ form.password2 }}
+                    {% for e in form.password2.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <div class="section-label">Role & Team</div>
+            <div class="form-row">
+                <div class="auth-field">
+                    <label>Role *</label>
+                    {{ form.role }}
+                    {% for e in form.role.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="auth-field">
+                    <label>Team</label>
+                    {{ form.team }}
+                    {% for e in form.team.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="{% url 'login' %}">Login here</a>
+        </div>
+    </div>
+</body>
+</html>

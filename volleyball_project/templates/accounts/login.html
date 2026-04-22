@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Volleyball Platform</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/volleyball.css' %}">
+    <style>
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+        .auth-card {
+            background: var(--blue-sidebar);
+            border-radius: var(--radius);
+            padding: 40px 32px;
+            width: 100%; max-width: 340px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .auth-avatar {
+            width: 70px; height: 70px; border-radius: 50%;
+            background: var(--blue-light); margin: 0 auto 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; border: 3px solid var(--orange);
+        }
+        .auth-title { font-size:1.1rem; font-weight:900; color:var(--white); margin-bottom:4px; }
+        .auth-subtitle { font-size:0.75rem; color:var(--orange); font-weight:700; margin-bottom:24px; }
+        .auth-field { margin-bottom:14px; text-align:left; }
+        .auth-field label {
+            display:block; font-size:0.7rem; font-weight:700;
+            color:var(--gray-mid); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .auth-field input {
+            width:100%; padding:10px 14px;
+            background:rgba(255,255,255,0.1);
+            border:1px solid var(--border);
+            border-radius:var(--radius-sm);
+            color:var(--white); font-size:0.85rem; outline:none;
+            transition: border-color 0.15s;
+        }
+        .auth-field input:focus { border-color:var(--orange); }
+        .auth-btn {
+            width:100%; padding:12px;
+            background:var(--orange); color:var(--blue-dark);
+            border:none; border-radius:var(--radius-sm);
+            font-size:0.88rem; font-weight:900; cursor:pointer;
+            margin-top:6px; text-transform:uppercase; letter-spacing:1.5px;
+            transition: background 0.15s;
+        }
+        .auth-btn:hover { background:var(--orange-dark); }
+        .auth-error {
+            background:rgba(232,64,64,0.15); border:1px solid var(--red);
+            border-radius:var(--radius-sm); padding:10px 12px;
+            font-size:0.78rem; color:#ff8080; margin-bottom:14px;
+        }
+        .auth-footer { margin-top:18px; font-size:0.75rem; color:var(--gray-text); }
+        .auth-footer a { color:var(--orange); text-decoration:none; font-weight:600; }
+        .auth-footer a:hover { text-decoration:underline; }
+        .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-avatar">👤</div>
+        <div class="auth-title">VOLLEYBALL</div>
+        <div class="auth-subtitle">PLATFORM</div>
+
+        {% if error %}
+        <div class="auth-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="auth-field">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" autofocus autocomplete="username">
+            </div>
+            <div class="auth-field">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="auth-btn">Login</button>
+        </form>
+
+        <hr class="divider">
+        <div class="auth-footer">
+            Don't have an account? <a href="{% url 'register' %}">Register here</a>
+        </div>
+    </div>
+</body>
+</html>

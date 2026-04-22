@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Role — Volleyball Platform</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/volleyball.css' %}">
+    <style>
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+        .role-card {
+            background: var(--blue-sidebar);
+            border-radius: var(--radius);
+            padding: 36px 28px;
+            width: 100%; max-width: 300px;
+            box-shadow: var(--shadow);
+        }
+        .role-title {
+            font-size: 0.85rem; font-weight: 800; color: var(--white);
+            text-align:center; margin-bottom: 18px; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .role-btn {
+            display: block; width: 100%; padding: 11px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--white); font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; margin-bottom: 8px; text-transform: uppercase;
+            letter-spacing: 0.5px; transition: all 0.15s;
+        }
+        .role-btn:hover { background: var(--orange); color: var(--blue-dark); border-color: var(--orange); }
+    </style>
+</head>
+<body>
+    <div class="role-card">
+        <h2 class="role-title">Select Your Role</h2>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="role" value="player" class="role-btn">Player</button>
+            <button type="submit" name="role" value="captain" class="role-btn">Captain</button>
+            <button type="submit" name="role" value="coach" class="role-btn">Coach</button>
+            <button type="submit" name="role" value="parent" class="role-btn">Parent</button>
+            <button type="submit" name="role" value="manager" class="role-btn">Manager</button>
+        </form>
+    </div>
+</body>
+</html>

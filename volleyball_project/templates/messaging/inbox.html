@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Messages — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2 class="section-title">MESSAGES</h2>
+    <div style="display:flex; gap:8px;">
+        <button onclick="document.getElementById('new-group-modal').style.display='flex'" class="btn btn-outline">+ Group Chat</button>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:300px 1fr; gap:16px; height:calc(100vh - 200px);">
+
+    <!-- ── CONVERSATION LIST ── -->
+    <div style="background:rgba(255,255,255,0.06); border-radius:10px; border:1px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column;">
+        <div style="padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.7rem; font-weight:800; color:#f5a623; text-transform:uppercase; letter-spacing:1px;">
+            Conversations
+        </div>
+
+        <div style="overflow-y:auto; flex:1;">
+            {% for item in conv_data %}
+            <a href="{% url 'conversation_detail' item.conv.id %}"
+               style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.06); text-decoration:none; transition:background 0.15s;"
+               onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+               onmouseout="this.style.background='transparent'">
+                <div style="width:38px; height:38px; border-radius:50%; background:{% if item.conv.type == 'direct' %}#3b4de8{% else %}#f5a623{% endif %}; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">
+                    {% if item.conv.type == 'direct' %}👤{% else %}👥{% endif %}
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:0.78rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        {% if item.conv.type == 'direct' %}
+                            {% for u in item.others %}{{ u.username }}{% endfor %}
+                        {% else %}
+                            {{ item.conv.name }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.65rem; color:#7a80b0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">
+                        {% if item.last_msg %}{{ item.last_msg.body|truncatechars:35 }}{% else %}No messages yet{% endif %}
+                    </div>
+                </div>
+                {% if item.unread %}
+                <span style="background:#f5a623; color:#1a1f6e; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:900; flex-shrink:0;">
+                    {{ item.unread }}
+                </span>
+                {% endif %}
+            </a>
+            {% empty %}
+            <div style="padding:24px; text-align:center; color:#7a80b0; font-size:0.78rem;">
+                No conversations yet.<br>Start a DM below.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Start DM -->
+        <div style="border-top:1px solid rgba(255,255,255,0.1); padding:10px 14px;">
+            <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Start a Direct Message</div>
+            <div style="display:flex; flex-direction:column; gap:4px; max-height:140px; overflow-y:auto;">
+                {% for u in all_users %}
+                <a href="{% url 'start_dm' u.id %}"
+                   style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; text-decoration:none; transition:background 0.15s;"
+                   onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+                   onmouseout="this.style.background='transparent'">
+                    <div style="width:26px; height:26px; border-radius:50%; background:#1e2888; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">👤</div>
+                    <div>
+                        <span style="font-size:0.72rem; font-weight:600; color:#fff;">{{ u.username }}</span>
+                        <span style="font-size:0.62rem; color:#f5a623; margin-left:4px;">{{ u.profile.get_role_display }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── EMPTY STATE ── -->
+    <div style="background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:#7a80b0;">
+        <div style="font-size:3rem;">💬</div>
+        <div style="font-size:0.85rem; font-weight:700;">Select a conversation to start messaging</div>
+        <div style="font-size:0.72rem;">or start a new DM from the list on the left</div>
+    </div>
+
+</div>
+
+<!-- ── NEW GROUP MODAL ── -->
+<div id="new-group-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#1e2888; border-radius:10px; padding:28px; width:100%; max-width:420px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.9rem; font-weight:800; color:#fff; margin-bottom:18px;">Create Group Chat</h3>
+        <form method="post" action="{% url 'create_group_chat' %}">
+            {% csrf_token %}
+            <label style="display:block; font-size:0.68rem; font-weight:700; color:#c8cce8; margin-bottom:5px; text-transform:uppercase;">Group Name</label>
+            <input type="text" name="name" placeholder="e.g. Team Strategy" required
+                   style="width:100%; padding:9px 12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.82rem; margin-bottom:14px; outline:none;">
+
+            <label style="display:block; font-size:0.68rem; font-weight:700; color:#c8cce8; margin-bottom:5px; text-transform:uppercase;">Add Participants</label>
+            <div style="max-height:180px; overflow-y:auto; background:rgba(255,255,255,0.05); border-radius:6px; padding:8px; margin-bottom:16px;">
+                {% for u in all_users %}
+                <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; border-radius:4px; font-size:0.75rem; color:#c8cce8; text-transform:none; font-weight:400; margin-bottom:0;">
+                    <input type="checkbox" name="participants" value="{{ u.id }}" style="width:auto; margin:0;">
+                    {{ u.username }} <span style="color:#f5a623; font-size:0.65rem;">({{ u.profile.get_role_display }})</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" onclick="document.getElementById('new-group-modal').style.display='none'"
+                        style="padding:8px 18px; background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#c8cce8; font-size:0.78rem; cursor:pointer;">Cancel</button>
+                <button type="submit" class="btn btn-orange">Create Group</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2 class="section-title">DASHBOARD</h2>
+</div>
+
+<!-- SCRUM-27: Live Match Widget — shown only when a match is live -->
+<div id="live-widget" style="display:none; background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.5); border-radius:10px; padding:16px 20px; margin-bottom:18px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <span style="background:#e74c3c; color:white; padding:3px 12px; border-radius:20px; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; animation:pulse 1.4s infinite;">🔴 LIVE</span>
+        <span style="font-size:0.75rem; color:#c8cce8; font-weight:600;">Match in progress</span>
+    </div>
+    <div id="live-matches-container"></div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.75rem; font-weight:800; color:#f5a623; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">UPCOMING EVENTS</h3>
+        {% if upcoming_matches %}
+            {% for match in upcoming_matches %}
+            <div style="background:rgba(255,255,255,0.06); border-radius:6px; padding:10px; margin-bottom:8px;">
+                <div style="font-size:0.75rem; font-weight:700;">{{ match.home_team.name }} vs {{ match.away_team.name }}</div>
+                <div style="font-size:0.65rem; color:#c8cce8; margin-top:3px;">{{ match.date|date:"d M Y • H:i" }} — {{ match.location }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% if upcoming_trainings %}
+            {% for training in upcoming_trainings %}
+            <div style="background:rgba(59,77,232,0.3); border-radius:6px; padding:10px; margin-bottom:8px;">
+                <div style="font-size:0.75rem; font-weight:700;">{{ training.title }}</div>
+                <div style="font-size:0.65rem; color:#c8cce8; margin-top:3px;">{{ training.date|date:"d M Y • H:i" }} — {{ training.location }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% if not upcoming_matches and not upcoming_trainings %}
+        <p style="font-size:0.72rem; color:#7a80b0; text-align:center; padding:12px 0;">No upcoming events.</p>
+        {% endif %}
+        <a href="{% url 'calendar' %}" style="display:block; text-align:center; padding:7px; background:var(--orange); color:#1a1f6e; border-radius:6px; font-size:0.72rem; font-weight:700; text-decoration:none; margin-top:8px;">Go to Calendar</a>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15);">
+        <h3 style="font-size:0.75rem; font-weight:800; color:#f5a623; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">ANNOUNCEMENTS</h3>
+        {% for ann in announcements %}
+        <div style="background:rgba(255,255,255,0.06); border-radius:6px; padding:10px; margin-bottom:8px;">
+            <div style="font-size:0.75rem; font-weight:700;">{{ ann.title }}</div>
+            <div style="font-size:0.65rem; color:#c8cce8; margin-top:3px;">{{ ann.body|truncatechars:80 }}</div>
+            <div style="font-size:0.6rem; color:#7a80b0; margin-top:4px;">{{ ann.created_at|timesince }} ago</div>
+        </div>
+        {% empty %}
+        <p style="font-size:0.72rem; color:#7a80b0; text-align:center; padding:12px 0;">No announcements.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+</style>
+
+<script>
+// SCRUM-27: Poll for live matches and sync to dashboard
+function syncLiveMatches() {
+    fetch('/scheduling/api/live-matches/')
+        .then(r => r.json())
+        .then(data => {
+            const widget    = document.getElementById('live-widget');
+            const container = document.getElementById('live-matches-container');
+            if (data.live_matches && data.live_matches.length > 0) {
+                widget.style.display = 'block';
+                container.innerHTML = data.live_matches.map(m => `
+                    <a href="${m.url}" style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 16px; text-decoration:none; color:#fff; margin-bottom:6px;">
+                        <span style="font-size:0.85rem; font-weight:700; color:#c8cce8;">${m.home_team}</span>
+                        <span style="font-size:1.6rem; font-weight:900; color:#f5a623; letter-spacing:6px;">${m.home_score} : ${m.away_score}</span>
+                        <span style="font-size:0.85rem; font-weight:700; color:#c8cce8;">${m.away_team}</span>
+                    </a>
+                `).join('');
+            } else {
+                widget.style.display = 'none';
+            }
+        })
+        .catch(() => {});
+}
+
+syncLiveMatches();
+setInterval(syncLiveMatches, 8000);
+</script>
+{% endblock %}

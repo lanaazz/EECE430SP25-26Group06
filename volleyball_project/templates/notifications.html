@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — Volleyball Platform{% endblock %}
+{% block page_title %}VOLLEYBALL{% endblock %}
+{% block page_subtitle %}{{ request.user.profile.team.name|default:"TEAM NAME" }}{% endblock %}
+{% block content %}
+<div class="section-header"><h2 class="section-title">NOTIFICATIONS</h2></div>
+
+{% if notifications %}
+<div style="display:flex; flex-direction:column; gap:12px;">
+    {% for notif in notifications %}
+    <div style="background:rgba(255,255,255,0.08); border-radius:8px; padding:16px; border:1px solid rgba(255,255,255,0.15); border-left:4px solid {% if notif.type == 'match' %}#f5a623{% elif notif.type == 'training' %}#27ae60{% elif notif.type == 'announcement' %}#3498db{% else %}#95a5a6{% endif %}; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-weight:700; font-size:0.9rem; color:#f5f5f5;">{{ notif.get_type_display }}</span>
+                    {% if not notif.is_read %}
+                    <span style="background:#f5a623; color:#1a1f6e; border-radius:4px; font-size:0.65rem; font-weight:700; padding:2px 6px;">NEW</span>
+                    {% endif %}
+                </div>
+                <div style="font-size:0.85rem; font-weight:600; color:#c8cce8;">{{ notif.title }}</div>
+                <div style="font-size:0.75rem; color:#7a80b0; margin-top:4px;">{{ notif.body }}</div>
+            </div>
+            <div style="font-size:0.65rem; color:#7a80b0; margin-left:12px;">{{ notif.created_at|date:"M d, H:i" }}</div>
+        </div>
+        {% if notif.link %}
+        <a href="{{ notif.link }}" style="display:block; margin-top:8px; font-size:0.75rem; color:#f5a623; text-decoration:none;">View Details →</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.8rem;">
+    🔔 No notifications yet. You'll see updates here when new matches, trainings, or announcements are created.
+</div>
+{% endif %}
+{% endblock %}

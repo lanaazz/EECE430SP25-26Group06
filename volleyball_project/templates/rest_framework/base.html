@@ -1,0 +1,388 @@
+{% load i18n %}
+{% load rest_framework %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if name %}{{ name }} — {% endif %}Volleyball API</title>
+    <style>
+        /* =============================================
+           VOLLEYBALL API — BLUE / ORANGE THEME
+           ============================================= */
+        :root {
+            --blue-dark:    #0f1450;
+            --blue-mid:     #1e2888;
+            --blue-sidebar: #1a1f6e;
+            --blue-light:   #3b4de8;
+            --orange:       #f5a623;
+            --orange-dark:  #e08800;
+            --white:        #ffffff;
+            --gray-mid:     #c8cce8;
+            --gray-text:    #7a80b0;
+            --border:       rgba(255,255,255,0.12);
+            --red:          #e84040;
+            --green:        #27ae60;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--blue-dark);
+            color: var(--white);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: var(--orange);
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .navbar::after {
+            content: '';
+            position: absolute;
+            right: 120px; top: 0;
+            width: 240px; height: 100%;
+            background: repeating-linear-gradient(
+                -45deg, transparent, transparent 6px,
+                rgba(255,255,255,0.15) 6px, rgba(255,255,255,0.15) 12px
+            );
+            pointer-events: none;
+        }
+        .navbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; position: relative; z-index: 1;
+        }
+        .navbar-brand .ball { font-size: 1.6rem; }
+        .navbar-brand .brand-text { line-height: 1.2; }
+        .navbar-brand .brand-title {
+            font-size: 0.95rem; font-weight: 900;
+            color: var(--blue-dark); letter-spacing: 1px;
+            display: block;
+        }
+        .navbar-brand .brand-sub {
+            font-size: 0.6rem; font-weight: 700;
+            color: var(--blue-sidebar); letter-spacing: 2px;
+            display: block; text-transform: uppercase;
+        }
+        .navbar-right {
+            display: flex; align-items: center; gap: 10px;
+            position: relative; z-index: 1;
+        }
+        .navbar-right a, .navbar-right button {
+            padding: 6px 14px;
+            border-radius: 5px;
+            font-size: 0.75rem; font-weight: 700;
+            text-decoration: none; cursor: pointer;
+            border: none; transition: all 0.15s;
+        }
+        .btn-login {
+            background: var(--blue-sidebar);
+            color: var(--white) !important;
+        }
+        .btn-login:hover { background: var(--blue-light) !important; }
+        .btn-logout {
+            background: rgba(26,31,110,0.3);
+            color: var(--blue-dark) !important;
+            border: 1px solid var(--blue-sidebar) !important;
+        }
+        .btn-logout:hover { background: rgba(26,31,110,0.5) !important; }
+
+        /* ── BREADCRUMB ── */
+        .breadcrumb-bar {
+            background: var(--blue-sidebar);
+            padding: 10px 24px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+        .breadcrumb-bar a { color: var(--orange); text-decoration: none; }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar span { color: var(--gray-mid); margin: 0 6px; }
+
+        /* ── MAIN LAYOUT ── */
+        .main-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 28px 20px;
+        }
+
+        /* ── PAGE TITLE ── */
+        .page-title {
+            font-size: 1.3rem; font-weight: 900;
+            color: var(--white); margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .page-title span { color: var(--orange); }
+        .page-url {
+            font-size: 0.78rem; color: var(--gray-text);
+            font-family: monospace; margin-bottom: 20px;
+        }
+
+        /* ── RESPONSE PANEL ── */
+        .response-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .response-panel-header {
+            background: var(--blue-sidebar);
+            padding: 10px 16px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .response-panel-header .method-badge {
+            font-size: 0.7rem; font-weight: 800;
+            padding: 3px 8px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-get    { background: #1a4d2e; color: #4caf50; }
+        .badge-post   { background: #1a3a6e; color: #64b5f6; }
+        .badge-put    { background: #4d3a10; color: var(--orange); }
+        .badge-delete { background: #4d1a1a; color: #ef9a9a; }
+        .badge-patch  { background: #2d1f4d; color: #ce93d8; }
+
+        .response-panel-header .status-code {
+            margin-left: auto;
+            font-size: 0.75rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 4px;
+        }
+        .status-2xx { background: rgba(39,174,96,0.2); color: #4caf50; }
+        .status-4xx { background: rgba(232,64,64,0.2); color: #ef9a9a; }
+
+        /* ── JSON / PRE ── */
+        pre {
+            background: #0a0e3a !important;
+            color: #e8eaf6 !important;
+            padding: 16px !important;
+            font-size: 0.8rem !important;
+            line-height: 1.6 !important;
+            overflow-x: auto;
+            border: none !important;
+            margin: 0 !important;
+        }
+        pre .string  { color: #a5d6a7; }
+        pre .number  { color: #ffcc80; }
+        pre .boolean { color: #80deea; }
+        pre .null    { color: #ef9a9a; }
+        pre .key     { color: #90caf9; }
+
+        /* ── FORMS ── */
+        .form-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-card h2 {
+            font-size: 0.75rem; font-weight: 800;
+            color: var(--orange); text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        label {
+            display: block;
+            font-size: 0.7rem; font-weight: 700;
+            color: var(--gray-mid); margin-bottom: 4px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        input[type=text], input[type=email], input[type=password],
+        input[type=url], input[type=number], textarea, select {
+            width: 100%;
+            padding: 9px 12px;
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 6px;
+            color: var(--white) !important;
+            font-size: 0.82rem;
+            outline: none;
+            margin-bottom: 12px;
+            transition: border-color 0.15s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--orange) !important;
+        }
+        select option { background: var(--blue-sidebar); }
+        textarea { min-height: 100px; resize: vertical; font-family: monospace; }
+
+        /* ── BUTTONS ── */
+        input[type=submit], button[type=submit], .btn {
+            padding: 9px 20px;
+            background: var(--orange) !important;
+            color: var(--blue-dark) !important;
+            border: none !important;
+            border-radius: 6px;
+            font-size: 0.8rem; font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px;
+            transition: background 0.15s;
+        }
+        input[type=submit]:hover, button[type=submit]:hover {
+            background: var(--orange-dark) !important;
+        }
+        .btn-danger {
+            background: rgba(232,64,64,0.2) !important;
+            color: #ef9a9a !important;
+            border: 1px solid var(--red) !important;
+        }
+
+        /* ── API ROOT GROUPS ── */
+        .endpoint-group {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .endpoint-group-title {
+            background: var(--blue-sidebar);
+            padding: 11px 16px;
+            font-size: 0.72rem; font-weight: 800;
+            color: var(--orange); text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+        }
+        .endpoint-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        .endpoint-row:last-child { border-bottom: none; }
+        .endpoint-row:hover { background: rgba(255,255,255,0.04); }
+        .endpoint-row-label {
+            font-size: 0.7rem; color: var(--gray-text);
+            min-width: 140px; text-transform: capitalize;
+        }
+        .endpoint-row-url {
+            font-family: monospace; font-size: 0.78rem;
+            color: var(--orange); text-decoration: none;
+        }
+        .endpoint-row-url:hover { text-decoration: underline; }
+
+        /* ── ALERTS ── */
+        .alert {
+            padding: 10px 14px; border-radius: 6px;
+            font-size: 0.8rem; margin-bottom: 14px;
+        }
+        .alert-danger  { background: rgba(232,64,64,0.15); border-left: 3px solid var(--red); color: #ff8080; }
+        .alert-success { background: rgba(39,174,96,0.15); border-left: 3px solid var(--green); color: #a5d6a7; }
+        .alert-info    { background: rgba(59,77,232,0.15); border-left: 3px solid var(--blue-light); color: var(--gray-mid); }
+
+        /* ── TABLE ── */
+        table {
+            width: 100%; border-collapse: collapse;
+            font-size: 0.8rem; margin-bottom: 16px;
+        }
+        th {
+            background: var(--blue-sidebar);
+            color: var(--orange); text-transform: uppercase;
+            font-size: 0.68rem; letter-spacing: 1px;
+            padding: 10px 12px; text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--gray-mid);
+        }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center; padding: 20px;
+            font-size: 0.68rem; color: var(--gray-text);
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+        footer a { color: var(--orange); text-decoration: none; }
+
+        /* ── MISC ── */
+        a { color: var(--orange); }
+        hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+        h1, h2, h3 { color: var(--white); }
+        code {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px; border-radius: 3px;
+            font-size: 0.82em; color: var(--orange);
+        }
+
+        /* DRF overrides */
+        .content-main { background: transparent !important; }
+        .region-content { background: transparent !important; }
+        #content { background: transparent !important; }
+        .navbar-nav > li > a { color: var(--blue-dark) !important; }
+    </style>
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="/api/" class="navbar-brand">
+            <span class="ball">🏐</span>
+            <div class="brand-text">
+                <span class="brand-title">VOLLEYBALL</span>
+                <span class="brand-sub">REST API</span>
+            </div>
+        </a>
+        <div class="navbar-right">
+            {% if user.is_authenticated %}
+                <span style="font-size:0.75rem; color:var(--blue-dark); font-weight:700;">
+                    👤 {{ user.username }}
+                    {% if user.profile.role %}
+                        <span style="opacity:0.7;">({{ user.profile.get_role_display }})</span>
+                    {% endif %}
+                </span>
+                <a href="{% url 'api_logout' %}" class="btn-logout">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-login">Login</a>
+            {% endif %}
+            <a href="/dashboard/" style="background:var(--blue-sidebar); color:var(--white); padding:6px 14px; border-radius:5px; font-size:0.75rem; font-weight:700; text-decoration:none;">← App</a>
+        </div>
+    </nav>
+
+    <!-- BREADCRUMB -->
+    {% if breadcrumblist %}
+    <div class="breadcrumb-bar">
+        {% for name, url in breadcrumblist %}
+            {% if forloop.last %}
+                <strong style="color:var(--white);">{{ name }}</strong>
+            {% else %}
+                <a href="{{ url }}">{{ name }}</a><span>›</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <div class="page-title">
+            <span>{{ name }}</span>
+        </div>
+        <div class="page-url">{{ request.get_full_path }}</div>
+
+        {% if description %}
+        <div class="alert alert-info" style="margin-bottom:20px;">
+            {{ description }}
+        </div>
+        {% endif %}
+
+        {% block body %}{% endblock %}
+    </div>
+
+    <footer>
+        🏐 Volleyball Platform API &nbsp;·&nbsp;
+        Built with <a href="https://www.django-rest-framework.org/">Django REST Framework</a>
+    </footer>
+</body>
+</html>
