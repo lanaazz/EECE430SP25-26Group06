@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="padding:20px;">
+    <h2 style="color:white;">Payment Report</h2>
+
+    <div style="margin-top:20px; background:rgba(255,255,255,0.08); padding:16px; border-radius:10px;">
+        <p style="color:white;"><strong>Total:</strong> {{ total }}</p>
+        <p style="color:#28ff88;"><strong>Paid:</strong> {{ paid }}</p>
+        <p style="color:#ffcc00;"><strong>Pending:</strong> {{ pending }}</p>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,16 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.db.models import Q
+from django.db.models import Q, Sum
 import json
 import calendar
 from datetime import datetime, date
 
 from .models import Match, TrainingSession, Team, Announcement, Payment, MatchStats, PlayerMatchStats, SessionAttendance
-from .forms import MatchForm, TrainingSessionForm, MatchStatsForm, PlayerMatchStatsForm, AttendanceForm
+from .forms import MatchForm, TrainingSessionForm, MatchStatsForm, PlayerMatchStatsForm, AttendanceForm, PaymentForm
 
 
 def coach_required(view_func):
@@ -345,6 +345,15 @@ def team_win_rate(request):
 
 @login_required
 def payment_status(request):
+    # HANDLE CREATE PAYMENT (manager/parent)
+    if request.method == 'POST' and 'create_payment' in request.POST:
+        if request.user.profile.role != 'manager':
+            return HttpResponseForbidden("Only managers can create payments.")
+
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            form.save()
+
     """Display and manage payments for players, parents, and managers."""
     from django.contrib.auth.models import User
     
@@ -364,6 +373,8 @@ def payment_status(request):
             'active_page': 'payments',
             'is_player': True,
             'is_parent_or_manager': False,
+            'is_manager': request.user.profile.role == 'manager',
+            'is_parent': request.user.profile.role == 'parent',
         }
         return render(request, 'scheduling/payment_status.html', context)
     
@@ -421,10 +432,14 @@ def payment_status(request):
             'active_page': 'payments',
             'is_player': False,
             'is_parent_or_manager': True,
+            'is_manager': request.user.profile.role == 'manager',
+            'is_parent': request.user.profile.role == 'parent',
             'available_players': available_players,
             'selected_player': selected_player,
             'selected_player_id': selected_player_id,
         }
+        form = PaymentForm()
+        context['form'] = form
         return render(request, 'scheduling/payment_status.html', context)
 
 
@@ -713,3 +728,21 @@ def live_matches_api(request):
     } for m in live]
 
     return JsonResponse({'live_matches': data})
+
+def payment_report(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    payments = Payment.objects.all()
+
+    total = payments.aggregate(Sum('amount'))['amount__sum'] or 0
+    paid = payments.filter(status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
+    pending = payments.filter(status='pending').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    context = {
+        'total': total,
+        'paid': paid,
+        'pending': pending,
+    }
+
+    return render(request, 'scheduling/payment_report.html', context)

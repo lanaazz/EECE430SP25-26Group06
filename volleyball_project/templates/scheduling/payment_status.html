@@ -58,6 +58,31 @@
 
 {% if is_parent_or_manager %}
 <!-- PARENT/MANAGER VIEW -->
+ {% if is_manager %}
+ <a href="{% url 'payment_report' %}" 
+   style="display:inline-block; margin-bottom:10px; padding:8px 14px; background:#28a745; color:white; border-radius:6px; text-decoration:none;">
+   Generate Report
+</a>
+ <div style="margin-bottom:20px; background:rgba(255,255,255,0.08); padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">
+    <h3 style="margin-bottom:10px; color:#f5f5f5;">Add Payment</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="create_payment" value="1">
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            {{ form.player }}
+            {{ form.amount }}
+            {{ form.status }}
+            {{ form.due_date }}
+        </div>
+
+        <button type="submit" style="margin-top:10px; padding:8px 16px; background:#f5a623; color:#1a1f6e; border:none; border-radius:6px; font-weight:700; cursor:pointer;">
+            Create Payment
+        </button>
+    </form>
+</div>
+{% endif %}
 <div style="display:grid; grid-template-columns:250px 1fr; gap:20px;">
     <!-- Player Selection Sidebar -->
     <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); height:fit-content;">

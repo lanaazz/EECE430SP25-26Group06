@@ -1,5 +1,5 @@
 from django import forms
-from .models import Match, TrainingSession, MatchStats, PlayerMatchStats, SessionAttendance
+from .models import Match, TrainingSession, MatchStats, PlayerMatchStats, SessionAttendance, Payment
 from django.utils import timezone
 
 
@@ -109,3 +109,21 @@ class AttendanceForm(forms.ModelForm):
         model = SessionAttendance
         fields = ['status']
         widgets = {'status': forms.Select(attrs={'class': 'form-input'})}
+
+
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['player', 'amount', 'status', 'due_date']
+        widgets = {
+            'player': forms.Select(attrs={'class': 'form-input'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-input', 'min': 0, 'step': '0.01'}),
+            'status': forms.Select(attrs={'class': 'form-input'}),
+            'due_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError("Amount must be greater than 0.")
+        return amount

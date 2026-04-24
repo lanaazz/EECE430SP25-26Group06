@@ -14,6 +14,7 @@ urlpatterns = [
 
     path('win-rate/', views.team_win_rate, name='team_win_rate'),
     path('payments/', views.payment_status, name='payment_status'),
+    path('payments/report/', views.payment_report, name='payment_report'),
     
     # Match scheduling (coach only)
     path('schedule/match/', views.schedule_match, name='schedule_match'),
