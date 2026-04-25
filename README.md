@@ -80,7 +80,6 @@ Then open http://127.0.0.1:8000/login/
 - Performance trend line chart (4-metric trends over matches)
 - Match-by-match detailed stats table
 - Season totals summary cards
-- **See [PLAYER_STATISTICS.md](PLAYER_STATISTICS.md) for full documentation**
 
 ### Achievements
 - Coaches create badge types (name, emoji icon, description) per team
