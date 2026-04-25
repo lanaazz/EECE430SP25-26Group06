@@ -42,10 +42,10 @@
                             {% if day.events %}
                                 <div class="day-events">
                                     {% for event in day.events %}
-                                        <a href="{{ event.url }}" class="event-pill event-{{ event.type }}" title="{{ event.label }}">
+                                        <div class="event-pill event-{{ event.type }}" title="{{ event.label }}" style="cursor:default; pointer-events:none;">
                                             <span class="event-time">{{ event.time }}</span>
                                             <span class="event-label">{{ event.label|truncatechars:14 }}</span>
-                                        </a>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             {% endif %}
@@ -61,14 +61,14 @@
                 {% if upcoming_matches %}
                     <ul class="events-list">
                         {% for match in upcoming_matches %}
-                            <li class="event-item match-item">
+                            <div class="event-item match-item" style="pointer-events:none; cursor:default;">
                                 <div class="event-icon">🏐</div>
                                 <div class="event-details">
                                     <span class="event-name">{{ match.home_team.name }} vs {{ match.away_team.name }}</span>
                                     <span class="event-meta">{{ match.date|date:"D, d M Y • H:i" }}</span>
                                     <span class="event-location">📍 {{ match.location }}</span>
                                 </div>
-                            </li>
+                            </div>
                         {% endfor %}
                     </ul>
                 {% else %}
@@ -81,14 +81,14 @@
                 {% if upcoming_trainings %}
                     <ul class="events-list">
                         {% for training in upcoming_trainings %}
-                            <li class="event-item training-item">
+                            <div class="event-item training-item" style="pointer-events:none; cursor:default;">
                                 <div class="event-icon">🏋️</div>
                                 <div class="event-details">
                                     <span class="event-name">{{ training.title }}</span>
                                     <span class="event-meta">{{ training.date|date:"D, d M Y • H:i" }}</span>
                                     <span class="event-location">📍 {{ training.location }} · {{ training.duration_minutes }} min</span>
                                 </div>
-                            </li>
+                            </div>
                         {% endfor %}
                     </ul>
                 {% else %}

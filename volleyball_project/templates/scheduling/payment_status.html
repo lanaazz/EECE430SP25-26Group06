@@ -133,17 +133,7 @@
                             </td>
                             <td>
                                 {% if payment.status == 'pending' %}
-                                <form method="POST" style="display:inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="payment_id" value="{{ payment.id }}">
-                                    <button type="submit" 
-                                            style="padding:6px 12px; background:#27ae60; color:#fff; border:none; border-radius:4px; 
-                                                   font--weight:700; font-size:0.7rem; cursor:pointer; transition:all 0.2s;"
-                                            onmouseover="this.style.background='#229954'"
-                                            onmouseout="this.style.background='#27ae60'">
-                                        Pay Now (Demo)
-                                    </button>
-                                </form>
+                                <span style="color:#f5a623; font-size:0.75rem;">Pending</span>
                                 {% else %}
                                 <span style="color:#95a5a6; font-size:0.75rem;">Paid on {{ payment.paid_date|date:"M d, Y" }}</span>
                                 {% endif %}

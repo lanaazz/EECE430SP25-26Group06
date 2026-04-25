@@ -95,123 +95,95 @@ def matches(request):
 
 @login_required
 def statistics(request):
+    from django.db.models import Sum
     user = request.user
 
     if not hasattr(user, 'profile') or not user.profile.team:
-        win_rate = 0
-        wins = 0
-        total_matches = 0
-        losses = 0
-        match_data = []
-        avg_stats = {}
-        player_stats = []
+        return render(request, 'statistics.html', {
+            'active_page': 'statistics',
+            'no_team': True,
+        })
+
+    team = user.profile.team
+    role = user.profile.role
+
+    # All completed matches for the user's team
+    team_matches = Match.objects.filter(status='completed').filter(
+        Q(home_team=team) | Q(away_team=team)
+    ).select_related('home_team', 'away_team').order_by('date')
+
+    # Players the current user is allowed to browse
+    can_select = role in ['coach', 'manager', 'parent']
+    team_players = []
+    selected_player = None
+
+    if can_select:
+        team_players = list(
+            UserProfile.objects.filter(
+                team=team, role__in=['player', 'captain']
+            ).select_related('user').order_by('user__username')
+        )
+        selected_player_id = request.GET.get('player_id')
+        if selected_player_id:
+            try:
+                selected_player = UserProfile.objects.get(
+                    pk=selected_player_id, team=team,
+                    role__in=['player', 'captain']
+                ).user
+            except UserProfile.DoesNotExist:
+                pass
+        if selected_player is None and team_players:
+            selected_player = team_players[0].user
     else:
-        team = user.profile.team
+        # player / captain see only themselves
+        selected_player = user
 
-        matches = Match.objects.filter(status='completed').filter(
-            Q(home_team=team) | Q(away_team=team)
-        ).select_related('home_team', 'away_team').prefetch_related('stats').order_by('date')
+    # Fetch per-match stats for the selected player
+    player_match_data = []
+    total_stats = {'strikes': 0, 'blocks': 0, 'aces': 0, 'digs': 0, 'assists': 0, 'errors': 0}
 
-        total_matches = matches.count()
-        wins = 0
-        losses = 0
-        match_data = []
-        stats_list = []
+    if selected_player:
+        pms_qs = PlayerMatchStats.objects.filter(
+            match__in=team_matches, player=selected_player
+        ).select_related('match__home_team', 'match__away_team').order_by('match__date')
 
-        for match in matches:
-            if match.home_team == team:
-                if match.home_score > match.away_score:
-                    wins += 1
-                    result = 'W'
-                else:
-                    losses += 1
-                    result = 'L'
-                score_display = f"{match.home_score}-{match.away_score}"
-                opponent = match.away_team.name
-            else:  # away team
-                if match.away_score > match.home_score:
-                    wins += 1
-                    result = 'W'
-                else:
-                    losses += 1
-                    result = 'L'
-                score_display = f"{match.away_score}-{match.home_score}"
-                opponent = match.home_team.name
+        for pms in pms_qs:
+            m = pms.match
+            if m.home_team == team:
+                opponent = m.away_team.name
+                score = f"{m.home_score}-{m.away_score}"
+                result = 'W' if (m.home_score or 0) > (m.away_score or 0) else 'L'
+            else:
+                opponent = m.home_team.name
+                score = f"{m.away_score}-{m.home_score}"
+                result = 'W' if (m.away_score or 0) > (m.home_score or 0) else 'L'
 
-            match_data.append({
-                'date': match.date.strftime("%b %d, %Y"),
+            player_match_data.append({
+                'label':    m.date.strftime("%b %d"),
                 'opponent': opponent,
-                'score': score_display,
-                'result': result,
+                'score':    score,
+                'result':   result,
+                'strikes':  pms.strikes,
+                'blocks':   pms.blocks,
+                'aces':     pms.service_aces,
+                'digs':     pms.digs,
+                'assists':  pms.assists,
+                'errors':   pms.errors,
             })
 
-            # Collect match stats
-            if hasattr(match, 'stats'):
-                stats = match.stats
-                if match.home_team == team:
-                    stats_list.append({
-                        'strikes': stats.home_strikes,
-                        'blocks': stats.home_blocks,
-                        'service_aces': stats.home_service_aces,
-                        'errors': stats.home_errors,
-                    })
-                else:
-                    stats_list.append({
-                        'strikes': stats.away_strikes,
-                        'blocks': stats.away_blocks,
-                        'service_aces': stats.away_service_aces,
-                        'errors': stats.away_errors,
-                    })
-
-        win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
-
-        # Calculate averages
-        avg_stats = {}
-        if stats_list:
-            avg_stats['strikes'] = round(sum(s['strikes'] for s in stats_list) / len(stats_list), 1)
-            avg_stats['blocks'] = round(sum(s['blocks'] for s in stats_list) / len(stats_list), 1)
-            avg_stats['service_aces'] = round(sum(s['service_aces'] for s in stats_list) / len(stats_list), 1)
-            avg_stats['errors'] = round(sum(s['errors'] for s in stats_list) / len(stats_list), 1)
-
-        # SCRUM-15: Per-player aggregated stats for the team's completed matches
-        from django.db.models import Sum
-        player_stats_qs = PlayerMatchStats.objects.filter(
-            match__in=matches,
-        ).values(
-            'player__id', 'player__username', 'player__first_name', 'player__last_name'
-        ).annotate(
-            total_strikes=Sum('strikes'),
-            total_blocks=Sum('blocks'),
-            total_aces=Sum('service_aces'),
-            total_errors=Sum('errors'),
-            total_digs=Sum('digs'),
-            total_assists=Sum('assists'),
-        ).order_by('-total_strikes')
-
-        player_stats = [
-            {
-                'name': (p['player__first_name'] + ' ' + p['player__last_name']).strip() or p['player__username'],
-                'strikes':  p['total_strikes']  or 0,
-                'blocks':   p['total_blocks']   or 0,
-                'aces':     p['total_aces']     or 0,
-                'errors':   p['total_errors']   or 0,
-                'digs':     p['total_digs']     or 0,
-                'assists':  p['total_assists']  or 0,
-            }
-            for p in player_stats_qs
-        ]
+        for row in player_match_data:
+            for k in ('strikes', 'blocks', 'aces', 'digs', 'assists', 'errors'):
+                total_stats[k] += row[k]
 
     context = {
         'active_page': 'statistics',
-        'win_rate': round(win_rate, 2),
-        'wins': wins,
-        'losses': wins and total_matches - wins or 0,
-        'total_matches': total_matches,
-        'match_data': match_data,
-        'avg_stats': avg_stats,
-        'player_stats': player_stats,
+        'role': role,
+        'can_select': can_select,
+        'team_players': team_players,
+        'selected_player': selected_player,
+        'player_match_data': player_match_data,
+        'total_stats': total_stats,
     }
-
     return render(request, 'statistics.html', context)
 
 

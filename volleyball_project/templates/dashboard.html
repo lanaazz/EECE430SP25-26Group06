@@ -72,11 +72,11 @@ function syncLiveMatches() {
             if (data.live_matches && data.live_matches.length > 0) {
                 widget.style.display = 'block';
                 container.innerHTML = data.live_matches.map(m => `
-                    <a href="${m.url}" style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 16px; text-decoration:none; color:#fff; margin-bottom:6px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 16px; margin-bottom:6px; cursor:default;">
                         <span style="font-size:0.85rem; font-weight:700; color:#c8cce8;">${m.home_team}</span>
                         <span style="font-size:1.6rem; font-weight:900; color:#f5a623; letter-spacing:6px;">${m.home_score} : ${m.away_score}</span>
                         <span style="font-size:0.85rem; font-weight:700; color:#c8cce8;">${m.away_team}</span>
-                    </a>
+                    </div>
                 `).join('');
             } else {
                 widget.style.display = 'none';

@@ -6,243 +6,228 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock %}
 {% block content %}
-<div class="section-header"><h2 class="section-title">STATISTICS</h2></div>
+<div class="section-header"><h2 class="section-title">PLAYER STATISTICS</h2></div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">TOTAL MATCHES</div>
-        <div style="font-size:2.2rem; font-weight:900; color:#f5a623;">{{ total_matches }}</div>
+{% if no_team %}
+<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.9rem;">
+  You are not assigned to a team yet. Statistics will appear once your coach adds you to a team.
+</div>
+{% else %}
+
+{% if can_select %}
+<!-- Player Selector (coach / manager / parent) -->
+<form method="get" style="margin-bottom:24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+  <label style="font-size:0.75rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px;">View Player</label>
+  <select name="player_id" onchange="this.form.submit()"
+    style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#c8cce8;
+           border-radius:8px; padding:8px 14px; font-size:0.85rem; cursor:pointer; outline:none;">
+    {% for tp in team_players %}
+    <option value="{{ tp.id }}"
+      {% if selected_player and selected_player.id == tp.user.id %}selected{% endif %}>
+      {{ tp.user.get_full_name|default:tp.user.username }}
+      {% if tp.role == 'captain' %}(C){% endif %}
+    </option>
+    {% empty %}
+    <option disabled>No players on this team yet</option>
+    {% endfor %}
+  </select>
+</form>
+{% endif %}
+
+{% if selected_player %}
+<!-- Player header -->
+<div style="display:flex; align-items:center; gap:16px; margin-bottom:24px; padding:18px 22px;
+            background:rgba(245,166,35,0.08); border-radius:12px; border:1px solid rgba(245,166,35,0.25);">
+  <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#f5a623,#e67e22);
+              display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:900; color:#fff;">
+    {{ selected_player.username|first|upper }}
+  </div>
+  <div>
+    <div style="font-size:1.1rem; font-weight:800; color:#f5a623;">
+      {{ selected_player.get_full_name|default:selected_player.username }}
     </div>
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">WINS</div>
-        <div style="font-size:2.2rem; font-weight:900; color:#27ae60;">{{ wins }}</div>
+    <div style="font-size:0.72rem; color:#7a80b0; text-transform:uppercase; letter-spacing:1px;">
+      {{ selected_player.profile.role|capfirst }} · {{ selected_player.profile.team.name }}
     </div>
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">WIN RATE</div>
-        <div style="font-size:2.2rem; font-weight:900; color:#f5a623;">{{ win_rate }}%</div>
-    </div>
+  </div>
 </div>
 
-{% if match_data %}
-<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; margin-bottom:24px;">
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG STRIKES</div>
-        <div style="font-size:1.8rem; font-weight:900; color:#3498db;">{{ avg_stats.strikes|default:"—" }}</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG BLOCKS</div>
-        <div style="font-size:1.8rem; font-weight:900; color:#9b59b6;">{{ avg_stats.blocks|default:"—" }}</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG ACES</div>
-        <div style="font-size:1.8rem; font-weight:900; color:#1abc9c;">{{ avg_stats.service_aces|default:"—" }}</div>
-    </div>
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.15); text-align:center;">
-        <div style="font-size:0.65rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">AVG ERRORS</div>
-        <div style="font-size:1.8rem; font-weight:900; color:#e74c3c;">{{ avg_stats.errors|default:"—" }}</div>
-    </div>
+{% if player_match_data %}
+<!-- Season Totals Summary Cards -->
+<div style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:24px;">
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">STRIKES</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#3498db;">{{ total_stats.strikes }}</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">BLOCKS</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#9b59b6;">{{ total_stats.blocks }}</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">ACES</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#1abc9c;">{{ total_stats.aces }}</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">DIGS</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#f5a623;">{{ total_stats.digs }}</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">ASSISTS</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#27ae60;">{{ total_stats.assists }}</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:14px 10px; border:1px solid rgba(255,255,255,0.12); text-align:center;">
+    <div style="font-size:0.6rem; font-weight:700; color:#7a80b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">ERRORS</div>
+    <div style="font-size:1.8rem; font-weight:900; color:#e74c3c;">{{ total_stats.errors }}</div>
+  </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
-    <!-- Win/Loss Chart -->
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
-        <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Win/Loss Ratio</h3>
-        <canvas id="winLossChart" style="max-height:250px;"></canvas>
-    </div>
+<!-- Charts row -->
+<div style="display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:24px;">
 
-    <!-- Performance Trend -->
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
-        <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Recent Matches</h3>
-        <canvas id="performanceChart" style="max-height:250px;"></canvas>
-    </div>
+  <!-- Radar: Season profile -->
+  <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.12);">
+    <h3 style="font-size:0.78rem; font-weight:700; color:#c8cce8; margin-bottom:14px; text-transform:uppercase; letter-spacing:1px;">Season Profile</h3>
+    <canvas id="radarChart" style="max-height:270px;"></canvas>
+  </div>
 
-    <!-- Stats Overview -->
-    <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
-        <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Team Performance</h3>
-        <canvas id="statsChart" style="max-height:250px;"></canvas>
-    </div>
+  <!-- Bar: per-match stats breakdown -->
+  <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.12);">
+    <h3 style="font-size:0.78rem; font-weight:700; color:#c8cce8; margin-bottom:14px; text-transform:uppercase; letter-spacing:1px;">Per-Match Breakdown</h3>
+    <canvas id="barChart" style="max-height:270px;"></canvas>
+  </div>
 </div>
 
-<!-- Match History -->
-<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15);">
-    <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">Match History</h3>
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr>
-                    <th style="text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#7a80b0; font-weight:700;">DATE</th>
-                    <th style="text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#7a80b0; font-weight:700;">OPPONENT</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#7a80b0; font-weight:700;">SCORE</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#7a80b0; font-weight:700;">RESULT</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for match in match_data %}
-                <tr>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.8rem; color:#c8cce8;">{{ match.date }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.8rem; color:#c8cce8;">{{ match.opponent }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.8rem; color:#c8cce8; text-align:center;">{{ match.score }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.8rem; text-align:center;">
-                        <span style="color:{% if match.result == 'W' %}#27ae60{% else %}#e74c3c{% endif %}; font-weight:700;">{{ match.result }}</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<!-- Trend line chart -->
+<div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.12); margin-bottom:24px;">
+  <h3 style="font-size:0.78rem; font-weight:700; color:#c8cce8; margin-bottom:14px; text-transform:uppercase; letter-spacing:1px;">Performance Trend</h3>
+  <canvas id="lineChart" style="max-height:220px;"></canvas>
+</div>
+
+<!-- Per-match stats table -->
+<div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.12);">
+  <h3 style="font-size:0.78rem; font-weight:700; color:#c8cce8; margin-bottom:14px; text-transform:uppercase; letter-spacing:1px;">Match-by-Match Stats</h3>
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <thead>
+        <tr>
+          <th style="text-align:left;   padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#7a80b0; font-size:0.68rem; font-weight:700;">DATE</th>
+          <th style="text-align:left;   padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#7a80b0; font-size:0.68rem; font-weight:700;">OPPONENT</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#7a80b0; font-size:0.68rem; font-weight:700;">RES</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#3498db; font-size:0.68rem; font-weight:700;">STK</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#9b59b6; font-size:0.68rem; font-weight:700;">BLK</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#1abc9c; font-size:0.68rem; font-weight:700;">ACE</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#f5a623; font-size:0.68rem; font-weight:700;">DIG</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#27ae60; font-size:0.68rem; font-weight:700;">AST</th>
+          <th style="text-align:center; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#e74c3c; font-size:0.68rem; font-weight:700;">ERR</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in player_match_data %}
+        <tr>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#c8cce8;">{{ row.label }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#c8cce8;">{{ row.opponent }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center;">
+            <span style="color:{% if row.result == 'W' %}#27ae60{% else %}#e74c3c{% endif %}; font-weight:700;">{{ row.result }}</span>
+          </td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#3498db; font-weight:700; text-align:center;">{{ row.strikes }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#9b59b6; font-weight:700; text-align:center;">{{ row.blocks }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#1abc9c; font-weight:700; text-align:center;">{{ row.aces }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#f5a623; font-weight:700; text-align:center;">{{ row.digs }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#27ae60; font-weight:700; text-align:center;">{{ row.assists }}</td>
+          <td style="padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#e74c3c; font-weight:700; text-align:center;">{{ row.errors }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-    // Win/Loss Ratio Chart
-    const winLossCtx = document.getElementById('winLossChart').getContext('2d');
-    new Chart(winLossCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Wins', 'Losses'],
-            datasets: [{
-                data: [{{ wins }}, {{ losses }}],
-                backgroundColor: ['#27ae60', '#e74c3c'],
-                borderColor: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.1)'],
-                borderWidth: 2,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#c8cce8',
-                        font: { size: 12 }
-                    }
-                }
-            }
-        }
-    });
+  const matchLabels  = [{% for r in player_match_data %}'{{ r.label }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+  const strikes  = [{% for r in player_match_data %}{{ r.strikes }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const blocks   = [{% for r in player_match_data %}{{ r.blocks }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const aces     = [{% for r in player_match_data %}{{ r.aces }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const digs     = [{% for r in player_match_data %}{{ r.digs }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const assists  = [{% for r in player_match_data %}{{ r.assists }}{% if not forloop.last %},{% endif %}{% endfor %}];
+  const errors   = [{% for r in player_match_data %}{{ r.errors }}{% if not forloop.last %},{% endif %}{% endfor %}];
 
-    // Performance Trend Chart
-    const results = [{% for match in match_data %}'{{ match.result }}'{{ forloop.last|yesno:",," }}{% endfor %}];
-    const resultValues = results.map(r => r === 'W' ? 1 : 0);
-    
-    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-    new Chart(performanceCtx, {
-        type: 'line',
-        data: {
-            labels: [{% for match in match_data %}'Match {{ forloop.counter }}'{{ forloop.last|yesno:",," }}{% endfor %}],
-            datasets: [{
-                label: 'Performance (Win=1, Loss=0)',
-                data: resultValues,
-                borderColor: '#f5a623',
-                backgroundColor: 'rgba(245, 166, 35, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#f5a623',
-                pointRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#c8cce8',
-                        font: { size: 12 }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 1,
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#7a80b0' }
-                },
-                x: {
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#7a80b0' }
-                }
-            }
-        }
-    });
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: '#c8cce8', font: { size: 11 }, boxWidth: 14 } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#7a80b0', font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#7a80b0', font: { size: 11 } } },
+    }
+  };
 
-    // Team Stats Chart
-    const statsCtx = document.getElementById('statsChart').getContext('2d');
-    new Chart(statsCtx, {
-        type: 'radar',
-        data: {
-            labels: ['Strikes', 'Blocks', 'Service Aces', 'Errors'],
-            datasets: [{
-                label: 'Average Performance',
-                data: [{{ avg_stats.strikes|default:0 }}, {{ avg_stats.blocks|default:0 }}, {{ avg_stats.service_aces|default:0 }}, {{ avg_stats.errors|default:0 }}],
-                borderColor: '#f5a623',
-                backgroundColor: 'rgba(245, 166, 35, 0.1)',
-                borderWidth: 2,
-                pointBackgroundColor: '#f5a623',
-                pointRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#c8cce8',
-                        font: { size: 12 }
-                    }
-                }
-            },
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: { color: '#7a80b0' }
-                }
-            }
-        }
-    });
+  // Radar — season totals profile
+  new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: ['Strikes', 'Blocks', 'Aces', 'Digs', 'Assists', 'Errors'],
+      datasets: [{
+        label: 'Season Totals',
+        data: [{{ total_stats.strikes }}, {{ total_stats.blocks }}, {{ total_stats.aces }},
+               {{ total_stats.digs }}, {{ total_stats.assists }}, {{ total_stats.errors }}],
+        borderColor: '#f5a623',
+        backgroundColor: 'rgba(245,166,35,0.15)',
+        borderWidth: 2,
+        pointBackgroundColor: '#f5a623',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#c8cce8', font: { size: 11 } } } },
+      scales: { r: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.12)' }, ticks: { color: '#7a80b0', font: { size: 10 } }, pointLabels: { color: '#c8cce8', font: { size: 11 } } } }
+    }
+  });
+
+  // Bar — per-match breakdown (strikes, blocks, aces, digs)
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: matchLabels,
+      datasets: [
+        { label: 'Strikes',  data: strikes, backgroundColor: 'rgba(52,152,219,0.7)',  borderRadius: 4 },
+        { label: 'Blocks',   data: blocks,  backgroundColor: 'rgba(155,89,182,0.7)', borderRadius: 4 },
+        { label: 'Digs',     data: digs,    backgroundColor: 'rgba(245,166,35,0.7)', borderRadius: 4 },
+        { label: 'Assists',  data: assists, backgroundColor: 'rgba(39,174,96,0.7)',  borderRadius: 4 },
+      ]
+    },
+    options: chartDefaults
+  });
+
+  // Line — performance trend (strikes + digs)
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: matchLabels,
+      datasets: [
+        { label: 'Strikes', data: strikes, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.08)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#3498db' },
+        { label: 'Digs',    data: digs,    borderColor: '#f5a623', backgroundColor: 'rgba(245,166,35,0.08)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#f5a623' },
+        { label: 'Aces',    data: aces,    borderColor: '#1abc9c', backgroundColor: 'transparent',           borderWidth: 2, tension: 0.4, fill: false, pointRadius: 4, pointBackgroundColor: '#1abc9c' },
+        { label: 'Errors',  data: errors,  borderColor: '#e74c3c', backgroundColor: 'transparent',           borderWidth: 2, tension: 0.4, fill: false, borderDash: [4,3], pointRadius: 4, pointBackgroundColor: '#e74c3c' },
+      ]
+    },
+    options: chartDefaults
+  });
 </script>
 
 {% else %}
-<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.15); text-align:center; color:#7a80b0; font-size:0.8rem;">
-    📊 No completed matches yet. Statistics will appear here once matches are completed.
+<div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.12); text-align:center; color:#7a80b0; font-size:0.85rem;">
+  No performance data recorded yet for <strong style="color:#c8cce8;">{{ selected_player.get_full_name|default:selected_player.username }}</strong>.<br>
+  Stats will appear once a coach records match statistics.
 </div>
 {% endif %}
 
-<!-- SCRUM-15: Individual Player Stats Table -->
-{% if player_stats %}
-<div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:20px; border:1px solid rgba(255,255,255,0.15); margin-top:24px;">
-    <h3 style="font-size:0.85rem; font-weight:700; color:#c8cce8; margin-bottom:16px; text-transform:uppercase;">🏅 Player Statistics (Season Totals)</h3>
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-            <thead>
-                <tr>
-                    <th style="text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#7a80b0; font-weight:700; font-size:0.72rem;">PLAYER</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#3498db; font-weight:700; font-size:0.72rem;">STRIKES</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#9b59b6; font-weight:700; font-size:0.72rem;">BLOCKS</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#1abc9c; font-weight:700; font-size:0.72rem;">ACES</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#f5a623; font-weight:700; font-size:0.72rem;">DIGS</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#27ae60; font-weight:700; font-size:0.72rem;">ASSISTS</th>
-                    <th style="text-align:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:#e74c3c; font-weight:700; font-size:0.72rem;">ERRORS</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in player_stats %}
-                <tr>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#c8cce8; font-weight:600;">{{ p.name }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#3498db; font-weight:700; text-align:center;">{{ p.strikes }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#9b59b6; font-weight:700; text-align:center;">{{ p.blocks }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#1abc9c; font-weight:700; text-align:center;">{{ p.aces }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#f5a623; font-weight:700; text-align:center;">{{ p.digs }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#27ae60; font-weight:700; text-align:center;">{{ p.assists }}</td>
-                    <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); color:#e74c3c; font-weight:700; text-align:center;">{{ p.errors }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+{% else %}
+<div style="background:rgba(255,255,255,0.07); border-radius:10px; padding:40px; border:1px solid rgba(255,255,255,0.12); text-align:center; color:#7a80b0; font-size:0.85rem;">
+  No players found on this team.
 </div>
+{% endif %}
+
 {% endif %}
 {% endblock %}

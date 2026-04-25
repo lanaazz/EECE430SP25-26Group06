@@ -12,7 +12,10 @@ python manage.py migrate
 # 3. Seed demo data (teams, users, matches, trainings, achievements, payments, news)
 python manage.py seed_demo
 
-# 4. Run the development server
+# 4. Seed player statistics data (per-match performance metrics)
+python manage.py seed_player_stats
+
+# 5. Run the development server
 python manage.py runserver
 ```
 
@@ -68,10 +71,16 @@ Then open http://127.0.0.1:8000/login/
 - Scheduled, completed, and cancelled statuses
 
 ### Statistics
-- Win/loss ratio doughnut chart
-- Performance trend line chart across recent matches
-- Radar chart for average team stats (strikes, blocks, aces, errors)
-- Full match history table
+- **Player Performance Graphs** (role-based):
+  - Coach / Manager: Select any player to view their graphs
+  - Parent: Select team players to monitor their progress
+  - Player / Captain: View only their own stats
+- Season profile radar chart (all 6 stats: strikes, blocks, aces, digs, assists, errors)
+- Per-match breakdown bar chart (strikes, blocks, digs, assists by match)
+- Performance trend line chart (4-metric trends over matches)
+- Match-by-match detailed stats table
+- Season totals summary cards
+- **See [PLAYER_STATISTICS.md](PLAYER_STATISTICS.md) for full documentation**
 
 ### Achievements
 - Coaches create badge types (name, emoji icon, description) per team
@@ -121,7 +130,8 @@ volleyball/
 │   ├── apps.py
 │   ├── migrations/
 │   └── management/commands/
-│       └── seed_demo.py                # Populates all demo data
+│       ├── seed_demo.py                # Populates all demo data
+│       └── seed_player_stats.py        # Generates PlayerMatchStats records for demo
 │
 ├── accounts/                           # Auth & user management
 │   ├── views.py                        # Login, logout, register, profile,
